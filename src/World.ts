@@ -1,4 +1,4 @@
-import { AnimatedSprite, type Application } from 'pixi.js'
+import { type Application } from 'pixi.js'
 import { logPokeLayout } from './logger'
 
 import { type TTileLayer, type GameLoader } from './GameLoader'
@@ -29,7 +29,9 @@ export class World {
     this.gameLoader = gameLoader
     this.setup()
 
-    this.setScreen(WorldScreen.map)
+    this.setScreen(WorldScreen.map);
+
+    (window as unknown as any).app = this.app // TODO
   }
 
   setup (): void {
@@ -38,23 +40,10 @@ export class World {
     this.setupEventLesteners()
 
     // this.resizeHandler()
-
-    const sprite = new AnimatedSprite(this.gameLoader.spritesheet.animations['Draggle-Idle'])
-    sprite.animationSpeed = 0.035
-    sprite.play()
-    sprite.position.x = 0
-    sprite.position.y = 0
-    this.app.stage.addChild(sprite)
-
-    const sprite2 = new AnimatedSprite(this.gameLoader.spritesheet.animations['Emby-Idle'])
-    sprite2.animationSpeed = 0.035
-    sprite2.play()
-    sprite2.position.x = 100
-    sprite2.position.y = 0
-    this.app.stage.addChild(sprite2)
   }
 
   setupEventLesteners (): void {
+    // window.addEventListener('resize', this.resizeDeBounce)
     this.app.ticker.add(this.handleAppTick)
   }
 
@@ -68,20 +57,21 @@ export class World {
 
   setupCanvas (): void {
     document.body.appendChild(this.app.view)
-    window.addEventListener('resize', this.resizeDeBounce)
   }
 
   setupScreens (): void {
     const {
-      app: { view }, gameLoader: {
+      app: { view: { width, height } },
+      gameLoader: {
         worldBackgroundTexture,
         worldForegroundTexture,
+        battleBackgroundTexture,
         spritesheet: { animations }
       }
     } = this
     this.mapScreen = new MapScreen({
-      plWidth: view.width,
-      plHeight: view.height,
+      viewWidth: width,
+      viewHeight: height,
       collisionsLayer: this.findTileLayer('Collisions'),
       battleZonesLayer: this.findTileLayer('Battle Zones'),
       playerSprites: {
@@ -95,7 +85,13 @@ export class World {
         foreground: worldForegroundTexture
       }
     })
-    this.battleScreen = new BattleScreen()
+    this.battleScreen = new BattleScreen({
+      sprites: {
+        draggle: animations['Draggle-Idle'],
+        emby: animations['Emby-Idle'],
+        background: battleBackgroundTexture
+      }
+    })
 
     this.app.stage.addChild(this.mapScreen)
     this.app.stage.addChild(this.battleScreen)
@@ -151,17 +147,28 @@ export class World {
     switch (screen) {
       case WorldScreen.map:
         this.mapScreen.visible = true
+        this.mapScreen.activate()
         this.battleScreen.visible = false
+        this.battleScreen.deactivate()
         break
       case WorldScreen.battle:
         this.mapScreen.visible = false
+        this.mapScreen.deactivate()
         this.battleScreen.visible = true
+        this.battleScreen.activate()
         break
     }
     this.screen = screen
   }
 
   handleAppTick = (): void => {
-    //
+    switch (this.screen) {
+      case WorldScreen.map:
+        this.mapScreen.handleScreenTick()
+        break
+      case WorldScreen.battle:
+        this.battleScreen.handleScreenTick()
+        break
+    }
   }
 }

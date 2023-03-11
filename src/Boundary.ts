@@ -1,35 +1,35 @@
 import { Graphics } from 'pixi.js'
-import { type IPosition } from './classes'
+import { logBoundary } from './logger'
+import { type IRect } from './utils'
 
 export class Boundary extends Graphics {
-  static width = 48
-  static height = 48
   public fillColor!: number
-  public _position!: IPosition
-  public _width!: number
-  public _height!: number
+  public _rect!: IRect
   constructor ({
-    position,
-    width = Boundary.width,
-    height = Boundary.height,
+    rect,
     fillColor = 0xff0000
   }: {
-    position: IPosition
-    width?: number
-    height?: number
+    rect: IRect
     fillColor?: number
   }) {
     super()
-    this._position = position
-    this._width = width
-    this._height = height
+    this._rect = rect
+    this.x = rect.x
+    this.y = rect.y
     this.fillColor = fillColor
+    this.draw()
+    if (logBoundary.enabled) {
+      this.visible = true
+      this.alpha = 0.3
+    } else {
+      this.visible = false
+    }
   }
 
   draw (): void {
     this.clear()
     this.beginFill(this.fillColor)
-    this.drawRect(this._position.x, this._position.y, this._width, this._height)
+    this.drawRect(0, 0, this._rect.width, this._rect.height)
     this.endFill()
   }
 }

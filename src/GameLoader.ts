@@ -1,7 +1,6 @@
 import { Assets, type Spritesheet, Texture } from 'pixi.js'
 
-/* eslint-disable @typescript-eslint/consistent-type-definitions */
-export type TTileLayer = {
+export interface TTileLayer {
   data: number[]
   height: number
   id: number
@@ -14,7 +13,7 @@ export type TTileLayer = {
   y: number
 }
 
-export type TGroupLayer = {
+export interface TGroupLayer {
   id: number
   layers: TTileLayer[]
   name: string
@@ -25,7 +24,7 @@ export type TGroupLayer = {
   y: number
 }
 
-export type TSettings = {
+export interface TSettings {
   compressionlevel: number
   height: number
   infinite: boolean
@@ -39,7 +38,6 @@ export type TSettings = {
 }
 
 type ImgTexture = Texture
-/* eslint-enable @typescript-eslint/consistent-type-definitions */
 
 export class GameLoader {
   loader: typeof Assets
@@ -70,16 +68,7 @@ export class GameLoader {
   async loadImage (url: string): Promise<Texture> {
     const res = await fetch(url)
     const imageBlob = await res.blob()
-    // const img = new Image()
     const blobURL = URL.createObjectURL(imageBlob)
-    // await new Promise<void>((resolve, reject) => {
-    //   img.onload = () => {
-    //     URL.revokeObjectURL(blobURL)
-    //     resolve()
-    //   }
-    //   img.onerror = reject
-    //   img.src = blobURL
-    // })
     return await Texture.fromURL(blobURL)
   }
 

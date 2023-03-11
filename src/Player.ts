@@ -1,13 +1,14 @@
-import { AnimatedSprite, Container, type Resource, type Texture } from 'pixi.js'
-import { type IPosition } from './classes'
+import { AnimatedSprite, Container, type Texture } from 'pixi.js'
+import { type DeepPartial, type IPosition } from './classes'
+import { logPlayerImpulse } from './logger'
 
 export interface IPlayerOptions {
   position: IPosition
   sprites: {
-    up: Array<Texture<Resource>>
-    left: Array<Texture<Resource>>
-    right: Array<Texture<Resource>>
-    down: Array<Texture<Resource>>
+    up: Texture[]
+    left: Texture[]
+    right: Texture[]
+    down: Texture[]
   }
 }
 
@@ -18,14 +19,31 @@ enum PlayerDirection {
   right
 }
 
+interface IImpulse {
+  up: boolean
+  left: boolean
+  right: boolean
+  down: boolean
+}
+
 export class Player extends Container {
   public DIRECTIONS = PlayerDirection
   private _direction!: PlayerDirection
-  public animationSpeed = 0.05
+  public animationSpeed = 0.1
   public up!: AnimatedSprite
   public left!: AnimatedSprite
   public right!: AnimatedSprite
   public down!: AnimatedSprite
+  public velocity = 3
+  public isMoving = false
+
+  private readonly impulse: IImpulse = {
+    up: false,
+    left: false,
+    right: false,
+    down: false
+  }
+
   constructor (options: IPlayerOptions) {
     super()
     this.setup(options)
@@ -66,7 +84,7 @@ export class Player extends Container {
   }
 
   playAnimation (): void {
-    this.hideAllDirections()
+    this.stopAllAnimations()
     switch (this._direction) {
       case PlayerDirection.down:
         this.down.play()
@@ -103,5 +121,85 @@ export class Player extends Container {
     downSpr.animationSpeed = this.animationSpeed
     this.addChild(downSpr)
     this.down = downSpr
+  }
+
+  private setImpulse (impulse: DeepPartial<IImpulse>): void {
+    /* eslint-disable @typescript-eslint/restrict-template-expressions */
+    logPlayerImpulse(`Got impulse up=${impulse.up} left=${impulse.left} right=${impulse.right} down=${impulse.down}`)
+    Object.assign(this.impulse, impulse)
+    if (impulse.up === true) {
+      this.setDirection(PlayerDirection.up)
+      if (this.impulse.down) {
+        this.impulse.down = false
+      }
+    } else if (impulse.left === true) {
+      this.setDirection(PlayerDirection.left)
+      if (this.impulse.right) {
+        this.impulse.right = false
+      }
+    } else if (impulse.right === true) {
+      this.setDirection(PlayerDirection.right)
+      if (this.impulse.left) {
+        this.impulse.left = false
+      }
+    } else if (impulse.down === true) {
+      this.setDirection(PlayerDirection.down)
+      if (this.impulse.up) {
+        this.impulse.up = false
+      }
+    }
+    if (this.impulse.up || this.impulse.left || this.impulse.right || this.impulse.down) {
+      this.isMoving = true
+      this.playAnimation()
+    } else {
+      this.stopAllAnimations()
+      this.isMoving = false
+    }
+    logPlayerImpulse(`(Moving=${this.isMoving} up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`)
+    /* eslint-enable @typescript-eslint/restrict-template-expressions */
+  }
+
+  addUpImpulse (): void {
+    this.setImpulse({ up: true })
+  }
+
+  subUpImpulse (): void {
+    this.setImpulse({ up: false })
+  }
+
+  addLeftImpulse (): void {
+    this.setImpulse({ left: true })
+  }
+
+  subLeftImpulse (): void {
+    this.setImpulse({ left: false })
+  }
+
+  addRightImpulse (): void {
+    this.setImpulse({ right: true })
+  }
+
+  subRightImpulse (): void {
+    this.setImpulse({ right: false })
+  }
+
+  addDownImpulse (): void {
+    this.setImpulse({ down: true })
+  }
+
+  subDownImpulse (): void {
+    this.setImpulse({ down: false })
+  }
+
+  releaseAllImpulse (): void {
+    this.setImpulse({ up: false, left: false, right: false, down: false })
+  }
+
+  getUpDownImpulse (): number {
+    return this.impulse.up ? -this.velocity : this.impulse.down ? this.velocity : 0
+  }
+
+  getLeftRightImpulse (): number {
+    return this.impulse.left ? -this.velocity : this.impulse.right ? this.velocity : 0
   }
 }
