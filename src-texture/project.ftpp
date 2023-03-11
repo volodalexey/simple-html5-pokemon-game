@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "version": "0.6.7"
+  },
+  "savePath": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture",
+  "images": [
+    {
+      "name": "Draggle-Idle-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Draggle-Idle-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Draggle-Idle-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Draggle-Idle-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Draggle-Idle-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Draggle-Idle-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Draggle-Idle-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Draggle-Idle-003.png",
+      "folder": ""
+    },
+    {
+      "name": "Emby-Idle-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Emby-Idle-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Emby-Idle-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Emby-Idle-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Emby-Idle-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Emby-Idle-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Emby-Idle-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Emby-Idle-003.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Down-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Down-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Down-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Down-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Down-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Down-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Down-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Down-003.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Left-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Left-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Left-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Left-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Left-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Left-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Left-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Left-003.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Right-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Right-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Right-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Right-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Right-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Right-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Right-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Right-003.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Up-000.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Up-000.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Up-001.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Up-001.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Up-002.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Up-002.png",
+      "folder": ""
+    },
+    {
+      "name": "Player-Up-003.png",
+      "path": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture/Player-Up-003.png",
+      "folder": ""
+    }
+  ],
+  "folders": [],
+  "packOptions": {
+    "textureName": "spritesheet",
+    "textureFormat": "png",
+    "removeFileExtension": false,
+    "prependFolderName": true,
+    "base64Export": false,
+    "tinify": false,
+    "tinifyKey": "",
+    "scale": 1,
+    "filter": "none",
+    "exporter": "JSON (hash)",
+    "fileName": "pack-result",
+    "savePath": "/mnt/mystorage/js_projects/simple-html5-pokemon-game/src-texture",
+    "width": 3500,
+    "height": 2048,
+    "fixedSize": false,
+    "powerOfTwo": false,
+    "padding": 0,
+    "extrude": 0,
+    "allowRotation": false,
+    "allowTrim": false,
+    "trimMode": "trim",
+    "alphaThreshold": "0",
+    "detectIdentical": true,
+    "packer": "OptimalPacker",
+    "packerMethod": "Automatic"
+  }
+}
