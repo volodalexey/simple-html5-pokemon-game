@@ -17,6 +17,7 @@ interface IMapScreenOptions {
     background: Texture
     foreground: Texture
   }
+  onBattleStart: () => void
 }
 
 export class MapScreen extends Container implements IScreen {
@@ -31,9 +32,13 @@ export class MapScreen extends Container implements IScreen {
   public background!: Sprite
   public foreground!: Sprite
   public moveInterface!: MoveInterface
+  public overlappingBattleTrigger = 0.5
+  public overlappingBattleChance = 0.01
+  public onBattleStart!: IMapScreenOptions['onBattleStart']
 
   constructor (options: IMapScreenOptions) {
     super()
+    this.onBattleStart = options.onBattleStart
     this.setup(options)
   }
 
@@ -122,6 +127,7 @@ export class MapScreen extends Container implements IScreen {
   deactivate (): void {
     this.isActive = false
     this.removeEventLesteners()
+    this.player.releaseAllImpulse()
   }
 
   handleScreenTick (): void {
@@ -175,6 +181,34 @@ export class MapScreen extends Container implements IScreen {
           logPlayerCollision('Vertical collision detected! Player stopped')
           isMovingVertical = false
           break
+        }
+      }
+    }
+
+    if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
+      for (let i = 0; i < this.battleZones.length; i++) {
+        const battleZone = this.battleZones[i]
+        const overlappingArea =
+        (Math.min(
+          this.player.x + this.player.width,
+          battleZone.x + battleZone.width
+        ) -
+          Math.max(this.player.x, battleZone.x)) *
+        (Math.min(
+          this.player.y + this.player.height,
+          battleZone.y + battleZone.height
+        ) -
+          Math.max(this.player.y, battleZone.y))
+        if (
+          rectangularCollision({
+            rect1: this.player,
+            rect2: battleZone
+          }) &&
+            overlappingArea > (this.player.width * this.player.height) * this.overlappingBattleTrigger &&
+            Math.random() <= this.overlappingBattleChance
+        ) {
+          logPlayerCollision('Battle zone triggered')
+          this.onBattleStart()
         }
       }
     }

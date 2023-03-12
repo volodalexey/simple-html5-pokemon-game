@@ -1,13 +1,15 @@
 import { type Application } from 'pixi.js'
-// import { logPokeLayout } from './logger'
+import gsap from 'gsap'
 
 import { type TTileLayer, type GameLoader } from './GameLoader'
 import { MapScreen } from './MapScreen'
 import { BattleScreen } from './BattleScreen'
+import { SplashScreen } from './SplashScreen'
+import { logWorld } from './logger'
 
 enum WorldScreen {
   map,
-  battle
+  battle,
 }
 
 export class World {
@@ -20,24 +22,30 @@ export class World {
   public totalWidth = 1024
   public totalHeight = 576
 
-  public screen!: WorldScreen
+  public activeScreen!: WorldScreen
   public mapScreen!: MapScreen
   public battleScreen!: BattleScreen
+  public splashScreen!: SplashScreen
 
   constructor ({ app, gameLoader }: { app: Application, gameLoader: GameLoader }) {
     this.app = app as Application<HTMLCanvasElement>
     this.gameLoader = gameLoader
     this.setup()
 
-    this.setScreen(WorldScreen.map)
+    this.setScreen(WorldScreen.battle, true)
+
+    this.resizeHandler()
+
+    if (logWorld.enabled) {
+      logWorld('window.world initialized!');
+      (window as unknown as any).world = this
+    }
   }
 
   setup (): void {
     this.setupCanvas()
     this.setupScreens()
     this.setupEventLesteners()
-
-    this.resizeHandler()
   }
 
   setupEventLesteners (): void {
@@ -81,7 +89,8 @@ export class World {
       mapSprites: {
         background: worldBackgroundTexture,
         foreground: worldForegroundTexture
-      }
+      },
+      onBattleStart: this.handleBattleStart
     })
     this.battleScreen = new BattleScreen({
       sprites: {
@@ -90,9 +99,14 @@ export class World {
         background: battleBackgroundTexture
       }
     })
+    this.splashScreen = new SplashScreen({
+      viewWidth: width,
+      viewHeight: height
+    })
 
     this.app.stage.addChild(this.mapScreen)
     this.app.stage.addChild(this.battleScreen)
+    this.app.stage.addChild(this.splashScreen)
   }
 
   resizeDeBounce = (): void => {
@@ -113,30 +127,80 @@ export class World {
 
   resizeHandler = (): void => {
     const params = { viewWidth: this.app.view.width, viewHeight: this.app.view.height }
-    this.mapScreen.handleScreenResize(params)
-    this.battleScreen.handleScreenResize(params)
-  }
-
-  setScreen (screen: WorldScreen): void {
-    switch (screen) {
+    switch (this.activeScreen) {
       case WorldScreen.map:
-        this.mapScreen.visible = true
-        this.mapScreen.activate()
-        this.battleScreen.visible = false
-        this.battleScreen.deactivate()
+        this.mapScreen.handleScreenResize(params)
         break
       case WorldScreen.battle:
-        this.mapScreen.visible = false
-        this.mapScreen.deactivate()
-        this.battleScreen.visible = true
-        this.battleScreen.activate()
+        this.battleScreen.handleScreenResize(params)
         break
     }
-    this.screen = screen
+    this.splashScreen.handleScreenResize(params)
+  }
+
+  setScreen (screen: WorldScreen, force = false): void {
+    switch (screen) {
+      case WorldScreen.map:
+        this.battleScreen.deactivate()
+        if (force) {
+          this.battleScreen.visible = false
+          this.mapScreen.visible = true
+          this.mapScreen.activate()
+        } else {
+          this.splashScreen.alpha = 0
+          gsap.to(this.splashScreen, {
+            alpha: 1,
+            onComplete: () => {
+              this.battleScreen.visible = false
+              this.mapScreen.visible = true
+              this.mapScreen.activate()
+
+              gsap.to(this.splashScreen, {
+                alpha: 0,
+                duration: 0.4
+              })
+            }
+          })
+        }
+        break
+      case WorldScreen.battle:
+        this.mapScreen.deactivate()
+        if (force) {
+          this.mapScreen.visible = false
+          this.battleScreen.visible = true
+          this.battleScreen.activate()
+        } else {
+          this.splashScreen.alpha = 0
+          gsap.to(this.splashScreen, {
+            alpha: 1,
+            repeat: 3,
+            yoyo: true,
+            duration: 0.4,
+            onComplete: () => {
+              gsap.to(this.splashScreen, {
+                alpha: 1,
+                duration: 0.4,
+                onComplete: () => {
+                  this.mapScreen.visible = false
+                  this.battleScreen.visible = true
+                  this.battleScreen.activate()
+                  gsap.to(this.splashScreen, {
+                    alpha: 0,
+                    duration: 0.4
+                  })
+                }
+              })
+            }
+          })
+        }
+        break
+    }
+    this.activeScreen = screen
+    this.resizeHandler()
   }
 
   handleAppTick = (): void => {
-    switch (this.screen) {
+    switch (this.activeScreen) {
       case WorldScreen.map:
         this.mapScreen.handleScreenTick()
         break
@@ -144,5 +208,9 @@ export class World {
         this.battleScreen.handleScreenTick()
         break
     }
+  }
+
+  handleBattleStart = (): void => {
+    this.setScreen(WorldScreen.battle)
   }
 }

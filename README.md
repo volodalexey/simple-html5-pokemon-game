@@ -10,7 +10,7 @@ Originally created by [Christopher Lis](https://github.com/christopher4lis) as [
 
 `src-texture` folder refers to [Free Texture Packer](http://free-tex-packer.com/download/)
 
-Refactored to use [PixiJS](https://pixijs.com/) game engine and [TypeScript](https://www.typescriptlang.org/)
+Refactored to use [PixiJS](https://pixijs.com/) game engine and [TypeScript](https://www.typescriptlang.org/) with touch/mouse support
 
 ## Install node modules (Recommended NodeJS version v16)
 
