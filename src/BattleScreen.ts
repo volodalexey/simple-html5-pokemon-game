@@ -59,4 +59,8 @@ export class BattleScreen extends Container implements IScreen {
 
     }
   }
+
+  handleScreenResize (options: Parameters<IScreen['handleScreenResize']>[0]): void {
+
+  }
 }

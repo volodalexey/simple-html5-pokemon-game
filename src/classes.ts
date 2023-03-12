@@ -12,4 +12,5 @@ export interface IScreen {
   activate: () => void
   deactivate: () => void
   handleScreenTick: () => void
+  handleScreenResize: ({ viewWidth, viewHeight }: { viewWidth: number, viewHeight: number }) => void
 }

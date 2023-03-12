@@ -123,38 +123,36 @@ export class Player extends Container {
     this.down = downSpr
   }
 
-  private setImpulse (impulse: DeepPartial<IImpulse>): void {
+  setImpulse (impulse: DeepPartial<IImpulse>): void {
     /* eslint-disable @typescript-eslint/restrict-template-expressions */
     logPlayerImpulse(`Got impulse up=${impulse.up} left=${impulse.left} right=${impulse.right} down=${impulse.down}`)
     Object.assign(this.impulse, impulse)
-    if (impulse.up === true) {
-      this.setDirection(PlayerDirection.up)
-      if (this.impulse.down) {
-        this.impulse.down = false
-      }
-    } else if (impulse.left === true) {
+    if (impulse.up === true && this.impulse.down) {
+      this.impulse.down = false
+    } else if (impulse.left === true && this.impulse.right) {
+      this.impulse.right = false
+    } else if (impulse.right === true && this.impulse.left) {
+      this.impulse.left = false
+    } else if (impulse.down === true && this.impulse.up) {
+      this.impulse.up = false
+    }
+    if (this.impulse.left) {
       this.setDirection(PlayerDirection.left)
-      if (this.impulse.right) {
-        this.impulse.right = false
-      }
-    } else if (impulse.right === true) {
+    } else if (this.impulse.right) {
       this.setDirection(PlayerDirection.right)
-      if (this.impulse.left) {
-        this.impulse.left = false
-      }
-    } else if (impulse.down === true) {
+    } else if (this.impulse.up) {
+      this.setDirection(PlayerDirection.up)
+    } else if (this.impulse.down) {
       this.setDirection(PlayerDirection.down)
-      if (this.impulse.up) {
-        this.impulse.up = false
-      }
     }
     if (this.impulse.up || this.impulse.left || this.impulse.right || this.impulse.down) {
-      this.isMoving = true
       this.playAnimation()
+      this.isMoving = true
     } else {
       this.stopAllAnimations()
       this.isMoving = false
     }
+
     logPlayerImpulse(`(Moving=${this.isMoving} up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`)
     /* eslint-enable @typescript-eslint/restrict-template-expressions */
   }
@@ -195,11 +193,11 @@ export class Player extends Container {
     this.setImpulse({ up: false, left: false, right: false, down: false })
   }
 
-  getUpDownImpulse (): number {
+  getVerticalImpulse (): number {
     return this.impulse.up ? -this.velocity : this.impulse.down ? this.velocity : 0
   }
 
-  getLeftRightImpulse (): number {
+  getHorizontalImpulse (): number {
     return this.impulse.left ? -this.velocity : this.impulse.right ? this.velocity : 0
   }
 }

@@ -1,5 +1,5 @@
 import { type Application } from 'pixi.js'
-import { logPokeLayout } from './logger'
+// import { logPokeLayout } from './logger'
 
 import { type TTileLayer, type GameLoader } from './GameLoader'
 import { MapScreen } from './MapScreen'
@@ -29,9 +29,7 @@ export class World {
     this.gameLoader = gameLoader
     this.setup()
 
-    this.setScreen(WorldScreen.map);
-
-    (window as unknown as any).app = this.app // TODO
+    this.setScreen(WorldScreen.map)
   }
 
   setup (): void {
@@ -39,11 +37,11 @@ export class World {
     this.setupScreens()
     this.setupEventLesteners()
 
-    // this.resizeHandler()
+    this.resizeHandler()
   }
 
   setupEventLesteners (): void {
-    // window.addEventListener('resize', this.resizeDeBounce)
+    window.addEventListener('resize', this.resizeDeBounce)
     this.app.ticker.add(this.handleAppTick)
   }
 
@@ -114,33 +112,9 @@ export class World {
   }
 
   resizeHandler = (): void => {
-    const { app, totalWidth, totalHeight } = this
-    const availableWidth = app.view.width
-    const availableHeight = app.view.height
-    let scale = 1
-    if (totalHeight >= totalWidth) {
-      scale = availableHeight / totalHeight
-      if (scale * totalWidth > availableWidth) {
-        scale = availableWidth / totalWidth
-      }
-      logPokeLayout(`By height (sc=${scale})`)
-    } else {
-      scale = availableWidth / totalWidth
-      logPokeLayout(`By width (sc=${scale})`)
-      if (scale * totalHeight > availableHeight) {
-        scale = availableHeight / totalHeight
-      }
-    }
-    const occupiedWidth = Math.floor(totalWidth * scale)
-    const occupiedHeight = Math.floor(totalHeight * scale)
-    const x = availableWidth > occupiedWidth ? (availableWidth - occupiedWidth) / 2 : 0
-    const y = availableHeight > occupiedHeight ? (availableHeight - occupiedHeight) / 2 : 0
-    logPokeLayout(`aw=${availableWidth} (ow=${occupiedWidth}) x=${x} ah=${availableHeight} (oh=${occupiedHeight}) y=${y}`)
-    this.app.stage.x = x
-    this.app.stage.width = occupiedWidth
-    this.app.stage.y = y
-    this.app.stage.height = occupiedHeight
-    logPokeLayout(`x=${x} y=${y} stgw=${this.app.stage.width} stgh=${this.app.stage.height}`)
+    const params = { viewWidth: this.app.view.width, viewHeight: this.app.view.height }
+    this.mapScreen.handleScreenResize(params)
+    this.battleScreen.handleScreenResize(params)
   }
 
   setScreen (screen: WorldScreen): void {

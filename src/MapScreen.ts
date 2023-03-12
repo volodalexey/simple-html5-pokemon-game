@@ -3,6 +3,7 @@ import { Boundary } from './Boundary'
 import { type IScreen } from './classes'
 import { type TTileLayer } from './GameLoader'
 import { logKeydown, logKeyup, logPlayerCollision } from './logger'
+import { MoveInterface } from './MoveInterface'
 import { Player, type IPlayerOptions } from './Player'
 import { rectangularCollision } from './utils'
 
@@ -29,6 +30,7 @@ export class MapScreen extends Container implements IScreen {
   public battleZones: Boundary[] = []
   public background!: Sprite
   public foreground!: Sprite
+  public moveInterface!: MoveInterface
 
   constructor (options: IMapScreenOptions) {
     super()
@@ -40,7 +42,7 @@ export class MapScreen extends Container implements IScreen {
     this.setupLayers(options)
     this.setupPlayer(options)
     this.setupForeground(options)
-    this.centerCamera(options)
+    this.setupMoveInterface(options)
   }
 
   setupLayers ({ collisionsLayer, battleZonesLayer }: IMapScreenOptions): void {
@@ -103,9 +105,7 @@ export class MapScreen extends Container implements IScreen {
       }
     })
 
-    this.addChild(this.player);
-
-    (window as unknown as any).player = this.player // TODO
+    this.addChild(this.player)
   }
 
   setupForeground ({ mapSprites: { foreground } }: IMapScreenOptions): void {
@@ -130,10 +130,9 @@ export class MapScreen extends Container implements IScreen {
     }
 
     if (this.player.isMoving) {
-      // console.log(this.background.x, this.background.y)
       const pRect = {
-        x: this.player.x + this.player.getLeftRightImpulse(),
-        y: this.player.y + this.player.getUpDownImpulse(),
+        x: this.player.x + this.player.getHorizontalImpulse(),
+        y: this.player.y + this.player.getVerticalImpulse(),
         width: this.player.width,
         height: this.player.height
       }
@@ -152,11 +151,17 @@ export class MapScreen extends Container implements IScreen {
       }
     }
     if (this.player.isMoving) {
-      this.player.x += this.player.getLeftRightImpulse()
-      this.player.y += this.player.getUpDownImpulse()
+      const horizontalPlayerImpulse = this.player.getHorizontalImpulse()
+      const verticalPlayerImpulse = this.player.getVerticalImpulse()
 
-      this.x -= this.player.getLeftRightImpulse()
-      this.y -= this.player.getUpDownImpulse()
+      this.player.x += horizontalPlayerImpulse
+      this.player.y += verticalPlayerImpulse
+
+      this.x -= horizontalPlayerImpulse
+      this.y -= verticalPlayerImpulse
+
+      this.moveInterface.x += horizontalPlayerImpulse
+      this.moveInterface.y += verticalPlayerImpulse
     }
   }
 
@@ -216,8 +221,43 @@ export class MapScreen extends Container implements IScreen {
     }
   }
 
-  centerCamera ({ viewWidth, viewHeight }: IMapScreenOptions): void {
-    this.x = -this.player.x + viewWidth / 2
-    this.y = -this.player.y + viewHeight / 2
+  setupMoveInterface ({ viewWidth, viewHeight }: IMapScreenOptions): void {
+    const moveInterface = new MoveInterface({
+      viewWidth,
+      viewHeight,
+      playerWidth: this.player.width,
+      playerHeight: this.player.height,
+      onDirectionPressedChange: this.handleDirectionPressedChange
+    })
+    this.addChild(moveInterface)
+    this.moveInterface = moveInterface
+  }
+
+  resizeMoveInterface ({ viewWidth, viewHeight }: Parameters<IScreen['handleScreenResize']>[0]): void {
+    this.moveInterface.x = (this.player.x + this.player.width / 2) - viewWidth / 2
+    this.moveInterface.y = (this.player.y + this.player.height / 2) - viewHeight / 2
+
+    this.moveInterface.width = viewWidth
+    this.moveInterface.height = viewHeight
+  }
+
+  centerCamera ({ viewWidth, viewHeight }: Parameters<IScreen['handleScreenResize']>[0]): void {
+    this.x = -(this.player.x + this.player.width / 2) + viewWidth / 2
+    this.y = -(this.player.y + this.player.height / 2) + viewHeight / 2
+  }
+
+  handleScreenResize (options: Parameters<IScreen['handleScreenResize']>[0]): void {
+    this.centerCamera(options)
+    this.resizeMoveInterface(options)
+  }
+
+  handleDirectionPressedChange = (): void => {
+    const { up, upRight, right, downRight, down, downLeft, left, upLeft } = this.moveInterface.directionPressed
+    this.player.setImpulse({
+      up: up || upRight || upLeft,
+      right: right || upRight || downRight,
+      down: down || downRight || downLeft,
+      left: left || upLeft || downLeft
+    })
   }
 }
