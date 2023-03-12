@@ -50,6 +50,8 @@ class BattleScreen extends pixi_js_1.Container {
         if (!this.isActive) {
         }
     }
+    handleScreenResize(options) {
+    }
 }
 exports.BattleScreen = BattleScreen;
 
@@ -155,6 +157,7 @@ exports.MapScreen = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
 const Boundary_1 = __webpack_require__(/*! ./Boundary */ "./src/Boundary.ts");
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
+const MoveInterface_1 = __webpack_require__(/*! ./MoveInterface */ "./src/MoveInterface.ts");
 const Player_1 = __webpack_require__(/*! ./Player */ "./src/Player.ts");
 const utils_1 = __webpack_require__(/*! ./utils */ "./src/utils.ts");
 class MapScreen extends pixi_js_1.Container {
@@ -210,6 +213,15 @@ class MapScreen extends pixi_js_1.Container {
                     break;
             }
         };
+        this.handleDirectionPressedChange = () => {
+            const { up, right, down, left } = this.moveInterface.directionPressed;
+            this.player.setImpulse({
+                up,
+                right,
+                down,
+                left
+            });
+        };
         this.setup(options);
     }
     setup(options) {
@@ -217,7 +229,7 @@ class MapScreen extends pixi_js_1.Container {
         this.setupLayers(options);
         this.setupPlayer(options);
         this.setupForeground(options);
-        this.centerCamera(options);
+        this.setupMoveInterface(options);
     }
     setupLayers({ collisionsLayer, battleZonesLayer }) {
         const { tilesPerRow } = this;
@@ -276,7 +288,6 @@ class MapScreen extends pixi_js_1.Container {
             }
         });
         this.addChild(this.player);
-        window.player = this.player; // TODO
     }
     setupForeground({ mapSprites: { foreground } }) {
         const fgSpr = new pixi_js_1.Sprite(foreground);
@@ -295,31 +306,59 @@ class MapScreen extends pixi_js_1.Container {
         if (!this.isActive) {
             return;
         }
-        if (this.player.isMoving) {
-            // console.log(this.background.x, this.background.y)
-            const pRect = {
-                x: this.player.x + this.player.getLeftRightImpulse(),
-                y: this.player.y + this.player.getUpDownImpulse(),
+        let isMovingHorizontal = false;
+        const horizontalPlayerImpulse = this.player.getHorizontalImpulse();
+        if (horizontalPlayerImpulse !== 0) {
+            isMovingHorizontal = true;
+            const pRectHor = {
+                x: this.player.x + horizontalPlayerImpulse,
+                y: this.player.y,
                 width: this.player.width,
                 height: this.player.height
             };
             for (let i = 0; i < this.boundaries.length; i++) {
                 const boundary = this.boundaries[i];
                 if ((0, utils_1.rectangularCollision)({
-                    rect1: pRect,
+                    rect1: pRectHor,
                     rect2: boundary
                 })) {
-                    (0, logger_1.logPlayerCollision)('Collision detected! Player stopped');
-                    this.player.isMoving = false;
+                    (0, logger_1.logPlayerCollision)('Horizontal collision detected! Player stopped');
+                    isMovingHorizontal = false;
                     break;
                 }
             }
         }
-        if (this.player.isMoving) {
-            this.player.x += this.player.getLeftRightImpulse();
-            this.player.y += this.player.getUpDownImpulse();
-            this.x -= this.player.getLeftRightImpulse();
-            this.y -= this.player.getUpDownImpulse();
+        let isMovingVertical = false;
+        const verticalPlayerImpulse = this.player.getVerticalImpulse();
+        if (verticalPlayerImpulse !== 0) {
+            isMovingVertical = true;
+            const pRectVer = {
+                x: this.player.x,
+                y: this.player.y + verticalPlayerImpulse,
+                width: this.player.width,
+                height: this.player.height
+            };
+            for (let i = 0; i < this.boundaries.length; i++) {
+                const boundary = this.boundaries[i];
+                if ((0, utils_1.rectangularCollision)({
+                    rect1: pRectVer,
+                    rect2: boundary
+                })) {
+                    (0, logger_1.logPlayerCollision)('Vertical collision detected! Player stopped');
+                    isMovingVertical = false;
+                    break;
+                }
+            }
+        }
+        if (isMovingHorizontal) {
+            this.player.x += horizontalPlayerImpulse;
+            this.x -= horizontalPlayerImpulse;
+            this.moveInterface.x += horizontalPlayerImpulse;
+        }
+        if (isMovingVertical) {
+            this.player.y += verticalPlayerImpulse;
+            this.y -= verticalPlayerImpulse;
+            this.moveInterface.y += verticalPlayerImpulse;
         }
     }
     addEventLesteners() {
@@ -330,12 +369,237 @@ class MapScreen extends pixi_js_1.Container {
         window.removeEventListener('keydown', this.handleKeydown);
         window.removeEventListener('keyup', this.handleKeyup);
     }
+    setupMoveInterface({ viewWidth, viewHeight }) {
+        const moveInterface = new MoveInterface_1.MoveInterface({
+            viewWidth,
+            viewHeight,
+            playerWidth: this.player.width,
+            playerHeight: this.player.height,
+            onDirectionPressedChange: this.handleDirectionPressedChange
+        });
+        this.addChild(moveInterface);
+        this.moveInterface = moveInterface;
+    }
+    resizeMoveInterface({ viewWidth, viewHeight }) {
+        this.moveInterface.x = (this.player.x + this.player.width / 2) - viewWidth / 2;
+        this.moveInterface.y = (this.player.y + this.player.height / 2) - viewHeight / 2;
+        this.moveInterface.width = viewWidth;
+        this.moveInterface.height = viewHeight;
+    }
     centerCamera({ viewWidth, viewHeight }) {
-        this.x = -this.player.x + viewWidth / 2;
-        this.y = -this.player.y + viewHeight / 2;
+        this.x = -(this.player.x + this.player.width / 2) + viewWidth / 2;
+        this.y = -(this.player.y + this.player.height / 2) + viewHeight / 2;
+    }
+    handleScreenResize(options) {
+        this.centerCamera(options);
+        this.resizeMoveInterface(options);
     }
 }
 exports.MapScreen = MapScreen;
+
+
+/***/ }),
+
+/***/ "./src/MoveInterface.ts":
+/*!******************************!*\
+  !*** ./src/MoveInterface.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MoveInterface = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
+var EnumDirection;
+(function (EnumDirection) {
+    EnumDirection["up"] = "up";
+    EnumDirection["right"] = "right";
+    EnumDirection["down"] = "down";
+    EnumDirection["left"] = "left";
+})(EnumDirection || (EnumDirection = {}));
+class MoveInterface extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.isPressed = false;
+        this.maximizePressure = 'allAxes';
+        this.directionPressed = {
+            up: 0,
+            right: 0,
+            down: 0,
+            left: 0
+        };
+        this.interactive = true;
+        this.playerWidth = options.playerWidth;
+        this.playerHeight = options.playerHeight;
+        this.onDirectionPressedChange = options.onDirectionPressedChange;
+        this.setup();
+        this.draw(options);
+    }
+    setup() {
+        const polygon = new pixi_js_1.Graphics();
+        polygon.alpha = logger_1.logMoveInterface.enabled ? 0.5 : 0;
+        this.addChild(polygon);
+        this.polygon = polygon;
+        this.setupEventLesteners();
+    }
+    draw({ viewWidth, viewHeight, upFillColor = 0xff0000, upRightFillColor = 0xffff00, rightFillColor = 0x0000ff, downRightFillColor = 0xffffff, downFillColor = 0x00ff00, downLeftFillColor = 0x00ffff, leftFillColor = 0xff00ff, upLeftFillColor = 0x000000 }) {
+        const halfWidth = viewWidth / 2;
+        const halfLeft = halfWidth - this.playerWidth / 2;
+        const halfRight = halfWidth + this.playerWidth / 2;
+        const halfHeight = viewHeight / 2;
+        const halfTop = halfHeight - this.playerHeight / 2;
+        const halfBottom = halfHeight + this.playerHeight / 2;
+        this.polygon.beginFill(upFillColor);
+        this.polygon.drawPolygon([
+            { x: halfLeft, y: 0 }, { x: halfRight, y: 0 },
+            { x: halfRight, y: halfTop }, { x: halfLeft, y: halfTop }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(upRightFillColor);
+        this.polygon.drawPolygon([
+            { x: halfRight, y: 0 }, { x: viewWidth, y: 0 },
+            { x: viewWidth, y: halfTop }, { x: halfRight, y: halfTop }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(rightFillColor);
+        this.polygon.drawPolygon([
+            { x: halfRight, y: halfTop }, { x: viewWidth, y: halfTop },
+            { x: viewWidth, y: halfBottom }, { x: halfRight, y: halfBottom }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(downRightFillColor);
+        this.polygon.drawPolygon([
+            { x: halfRight, y: halfBottom }, { x: viewWidth, y: halfBottom },
+            { x: viewWidth, y: viewHeight }, { x: halfRight, y: viewHeight }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(downFillColor);
+        this.polygon.drawPolygon([
+            { x: halfLeft, y: halfBottom }, { x: halfRight, y: halfBottom },
+            { x: halfRight, y: viewHeight }, { x: halfLeft, y: viewHeight }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(downLeftFillColor);
+        this.polygon.drawPolygon([
+            { x: 0, y: halfBottom }, { x: halfLeft, y: halfBottom },
+            { x: halfLeft, y: viewHeight }, { x: 0, y: viewHeight }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(leftFillColor);
+        this.polygon.drawPolygon([
+            { x: 0, y: halfTop }, { x: halfLeft, y: halfTop },
+            { x: halfLeft, y: halfBottom }, { x: 0, y: halfBottom }
+        ]);
+        this.polygon.endFill();
+        this.polygon.beginFill(upLeftFillColor);
+        this.polygon.drawPolygon([
+            { x: 0, y: 0 }, { x: halfLeft, y: 0 },
+            { x: halfLeft, y: halfTop }, { x: 0, y: halfTop }
+        ]);
+        this.polygon.endFill();
+    }
+    setupEventLesteners() {
+        this.on('pointerdown', (e) => {
+            this.setDirectionPressed(true, e.clientX, e.clientY);
+        });
+        this.on('pointermove', (e) => {
+            this.setDirectionPressed(undefined, e.clientX, e.clientY);
+        });
+        this.on('pointerup', (e) => {
+            this.setDirectionPressed(false, e.clientX, e.clientY);
+        });
+    }
+    setDirectionPressed(pressed, x, y) {
+        if (typeof pressed === 'boolean') {
+            this.isPressed = pressed;
+        }
+        const { directionPressed } = this;
+        Object.keys(directionPressed).forEach(key => {
+            directionPressed[key] = 0;
+        });
+        if (this.isPressed) {
+            const halfWidth = this.width / 2;
+            const halfHeight = this.height / 2;
+            const halfLeft = halfWidth - this.playerWidth / 2;
+            const maxHorizontal = halfLeft;
+            const halfRight = halfWidth + this.playerWidth / 2;
+            const halfTop = halfHeight - this.playerHeight / 2;
+            const maxVertical = halfTop;
+            const halfBottom = halfHeight + this.playerHeight / 2;
+            const rightPressure = x >= halfRight ? (x - halfRight) / maxHorizontal : 0;
+            const leftPressure = x <= halfLeft ? (halfLeft - x) / maxHorizontal : 0;
+            if (rightPressure > 0) {
+                directionPressed.right = rightPressure;
+            }
+            else if (leftPressure > 0) {
+                directionPressed.left = leftPressure;
+            }
+            const downPressure = y >= halfBottom ? (y - halfBottom) / maxVertical : 0;
+            const upPressure = y <= halfTop ? (halfTop - y) / maxVertical : 0;
+            if (downPressure > 0) {
+                directionPressed.down = downPressure;
+            }
+            else if (upPressure > 0) {
+                directionPressed.up = upPressure;
+            }
+            if (this.maximizePressure !== 'none') {
+                if (this.maximizePressure === 'mainAxis') {
+                    const maxHorizontal = Math.max(directionPressed.left, directionPressed.right);
+                    const maxVertical = Math.max(directionPressed.up, directionPressed.down);
+                    if (maxHorizontal > 0 && maxHorizontal > maxVertical) {
+                        if (directionPressed.left > 0) {
+                            directionPressed.left = 1;
+                        }
+                        else if (directionPressed.right > 0) {
+                            directionPressed.right = 1;
+                        }
+                    }
+                    else if (maxVertical > 0 && maxVertical > maxHorizontal) {
+                        if (directionPressed.up > 0) {
+                            directionPressed.up = 1;
+                        }
+                        else if (directionPressed.down > 0) {
+                            directionPressed.down = 1;
+                        }
+                    }
+                    else if (maxHorizontal > 0 && maxHorizontal === maxVertical) {
+                        if (directionPressed.left > 0) {
+                            directionPressed.left = 1;
+                        }
+                        else if (directionPressed.right > 0) {
+                            directionPressed.right = 1;
+                        }
+                        if (directionPressed.up > 0) {
+                            directionPressed.up = 1;
+                        }
+                        else if (directionPressed.down > 0) {
+                            directionPressed.down = 1;
+                        }
+                    }
+                }
+                else {
+                    if (directionPressed.left > 0) {
+                        directionPressed.left = 1;
+                    }
+                    else if (directionPressed.right > 0) {
+                        directionPressed.right = 1;
+                    }
+                    if (directionPressed.up > 0) {
+                        directionPressed.up = 1;
+                    }
+                    else if (directionPressed.down > 0) {
+                        directionPressed.down = 1;
+                    }
+                }
+            }
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            (0, logger_1.logPointerEvent)(`pressed=${pressed} x=${x} y=${y} hw=${halfWidth} hh=${halfHeight}`);
+        }
+        this.onDirectionPressedChange();
+    }
+}
+exports.MoveInterface = MoveInterface;
 
 
 /***/ }),
@@ -364,12 +628,11 @@ class Player extends pixi_js_1.Container {
         this.DIRECTIONS = PlayerDirection;
         this.animationSpeed = 0.1;
         this.velocity = 3;
-        this.isMoving = false;
         this.impulse = {
-            up: false,
-            left: false,
-            right: false,
-            down: false
+            up: 0,
+            left: 0,
+            right: 0,
+            down: 0
         };
         this.setup(options);
         this.setDirection(PlayerDirection.down);
@@ -443,73 +706,71 @@ class Player extends pixi_js_1.Container {
         /* eslint-disable @typescript-eslint/restrict-template-expressions */
         (0, logger_1.logPlayerImpulse)(`Got impulse up=${impulse.up} left=${impulse.left} right=${impulse.right} down=${impulse.down}`);
         Object.assign(this.impulse, impulse);
-        if (impulse.up === true) {
-            this.setDirection(PlayerDirection.up);
-            if (this.impulse.down) {
-                this.impulse.down = false;
-            }
+        if (typeof impulse.up === 'number' && impulse.up > 0 && this.impulse.down > 0) {
+            this.impulse.down = 0;
         }
-        else if (impulse.left === true) {
+        else if (typeof impulse.left === 'number' && impulse.left > 0 && this.impulse.right > 0) {
+            this.impulse.right = 0;
+        }
+        else if (typeof impulse.right === 'number' && impulse.right > 0 && this.impulse.left > 0) {
+            this.impulse.left = 0;
+        }
+        else if (typeof impulse.down === 'number' && impulse.down > 0 && this.impulse.up > 0) {
+            this.impulse.up = 0;
+        }
+        if (this.impulse.left > 0) {
             this.setDirection(PlayerDirection.left);
-            if (this.impulse.right) {
-                this.impulse.right = false;
-            }
         }
-        else if (impulse.right === true) {
+        else if (this.impulse.right > 0) {
             this.setDirection(PlayerDirection.right);
-            if (this.impulse.left) {
-                this.impulse.left = false;
-            }
         }
-        else if (impulse.down === true) {
+        else if (this.impulse.up > 0) {
+            this.setDirection(PlayerDirection.up);
+        }
+        else if (this.impulse.down > 0) {
             this.setDirection(PlayerDirection.down);
-            if (this.impulse.up) {
-                this.impulse.up = false;
-            }
         }
-        if (this.impulse.up || this.impulse.left || this.impulse.right || this.impulse.down) {
-            this.isMoving = true;
+        if (this.impulse.left > 0 || this.impulse.right > 0 || this.impulse.up > 0 || this.impulse.down > 0) {
             this.playAnimation();
         }
         else {
             this.stopAllAnimations();
-            this.isMoving = false;
         }
-        (0, logger_1.logPlayerImpulse)(`(Moving=${this.isMoving} up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`);
+        (0, logger_1.logPlayerImpulse)(`up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`);
         /* eslint-enable @typescript-eslint/restrict-template-expressions */
     }
     addUpImpulse() {
-        this.setImpulse({ up: true });
+        this.setImpulse({ up: 1 });
     }
     subUpImpulse() {
-        this.setImpulse({ up: false });
+        this.setImpulse({ up: 0 });
     }
     addLeftImpulse() {
-        this.setImpulse({ left: true });
+        this.setImpulse({ left: 1 });
     }
     subLeftImpulse() {
-        this.setImpulse({ left: false });
+        this.setImpulse({ left: 0 });
     }
     addRightImpulse() {
-        this.setImpulse({ right: true });
+        this.setImpulse({ right: 1 });
     }
     subRightImpulse() {
-        this.setImpulse({ right: false });
+        this.setImpulse({ right: 0 });
     }
     addDownImpulse() {
-        this.setImpulse({ down: true });
+        this.setImpulse({ down: 1 });
     }
     subDownImpulse() {
-        this.setImpulse({ down: false });
+        this.setImpulse({ down: 0 });
     }
     releaseAllImpulse() {
-        this.setImpulse({ up: false, left: false, right: false, down: false });
+        this.setImpulse({ up: 0, left: 0, right: 0, down: 0 });
     }
-    getUpDownImpulse() {
-        return this.impulse.up ? -this.velocity : this.impulse.down ? this.velocity : 0;
+    getVerticalImpulse() {
+        return this.impulse.up > 0 ? -this.velocity * this.impulse.up : this.impulse.down > 0 ? this.velocity * this.impulse.down : 0;
     }
-    getLeftRightImpulse() {
-        return this.impulse.left ? -this.velocity : this.impulse.right ? this.velocity : 0;
+    getHorizontalImpulse() {
+        return this.impulse.left > 0 ? -this.velocity * this.impulse.left : this.impulse.right > 0 ? this.velocity * this.impulse.right : 0;
     }
 }
 exports.Player = Player;
@@ -526,7 +787,6 @@ exports.Player = Player;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.World = void 0;
-const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
 const MapScreen_1 = __webpack_require__(/*! ./MapScreen */ "./src/MapScreen.ts");
 const BattleScreen_1 = __webpack_require__(/*! ./BattleScreen */ "./src/BattleScreen.ts");
 var WorldScreen;
@@ -544,34 +804,9 @@ class World {
             this.scheduleResizeHandler();
         };
         this.resizeHandler = () => {
-            const { app, totalWidth, totalHeight } = this;
-            const availableWidth = app.view.width;
-            const availableHeight = app.view.height;
-            let scale = 1;
-            if (totalHeight >= totalWidth) {
-                scale = availableHeight / totalHeight;
-                if (scale * totalWidth > availableWidth) {
-                    scale = availableWidth / totalWidth;
-                }
-                (0, logger_1.logPokeLayout)(`By height (sc=${scale})`);
-            }
-            else {
-                scale = availableWidth / totalWidth;
-                (0, logger_1.logPokeLayout)(`By width (sc=${scale})`);
-                if (scale * totalHeight > availableHeight) {
-                    scale = availableHeight / totalHeight;
-                }
-            }
-            const occupiedWidth = Math.floor(totalWidth * scale);
-            const occupiedHeight = Math.floor(totalHeight * scale);
-            const x = availableWidth > occupiedWidth ? (availableWidth - occupiedWidth) / 2 : 0;
-            const y = availableHeight > occupiedHeight ? (availableHeight - occupiedHeight) / 2 : 0;
-            (0, logger_1.logPokeLayout)(`aw=${availableWidth} (ow=${occupiedWidth}) x=${x} ah=${availableHeight} (oh=${occupiedHeight}) y=${y}`);
-            this.app.stage.x = x;
-            this.app.stage.width = occupiedWidth;
-            this.app.stage.y = y;
-            this.app.stage.height = occupiedHeight;
-            (0, logger_1.logPokeLayout)(`x=${x} y=${y} stgw=${this.app.stage.width} stgh=${this.app.stage.height}`);
+            const params = { viewWidth: this.app.view.width, viewHeight: this.app.view.height };
+            this.mapScreen.handleScreenResize(params);
+            this.battleScreen.handleScreenResize(params);
         };
         this.handleAppTick = () => {
             switch (this.screen) {
@@ -587,16 +822,15 @@ class World {
         this.gameLoader = gameLoader;
         this.setup();
         this.setScreen(WorldScreen.map);
-        window.app = this.app; // TODO
     }
     setup() {
         this.setupCanvas();
         this.setupScreens();
         this.setupEventLesteners();
-        // this.resizeHandler()
+        this.resizeHandler();
     }
     setupEventLesteners() {
-        // window.addEventListener('resize', this.resizeDeBounce)
+        window.addEventListener('resize', this.resizeDeBounce);
         this.app.ticker.add(this.handleAppTick);
     }
     findTileLayer(name) {
@@ -708,7 +942,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logBoundary = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logPokeLayout = void 0;
+exports.logPointerEvent = exports.logMoveInterface = exports.logBoundary = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logPokeLayout = void 0;
 const debug_1 = __importDefault(__webpack_require__(/*! debug */ "./node_modules/debug/src/browser.js"));
 exports.logPokeLayout = (0, debug_1.default)('poke-layout');
 exports.logKeydown = (0, debug_1.default)('poke-keydown');
@@ -716,6 +950,8 @@ exports.logKeyup = (0, debug_1.default)('poke-keyup');
 exports.logPlayerImpulse = (0, debug_1.default)('poke-player-impulse');
 exports.logPlayerCollision = (0, debug_1.default)('poke-player-collision');
 exports.logBoundary = (0, debug_1.default)('poke-boundary');
+exports.logMoveInterface = (0, debug_1.default)('poke-move-interface');
+exports.logPointerEvent = (0, debug_1.default)('poke-pointer-event');
 
 
 /***/ }),
