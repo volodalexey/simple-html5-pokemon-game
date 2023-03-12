@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { logMoveInterface, logMoveInterfacePressed, logPointerEvent } from './logger'
+import { logMoveInterface, logPointerEvent } from './logger'
 
 export interface IMoveInterfaceOptions {
   viewWidth: number
@@ -17,99 +17,30 @@ export interface IMoveInterfaceOptions {
   onDirectionPressedChange: () => void
 }
 
-enum MoveInterfaceDirection {
+enum EnumDirection {
   up = 'up',
-  upRight = 'up-right',
   right = 'right',
-  downRight = 'down-right',
   down = 'down',
-  downLeft = 'down-left',
   left = 'left',
-  upLeft = 'up-left'
-}
-
-interface IInteractiveGraphicsOptions {
-  direction: MoveInterfaceDirection
-  directionPressed: MoveInterface['directionPressed']
-  onPressedChange: (item: InteractiveGraphics) => void
-}
-
-class InteractiveGraphics extends Graphics {
-  public direction!: IInteractiveGraphicsOptions['direction']
-  public onPressedChange!: IInteractiveGraphicsOptions['onPressedChange']
-  private _isPressed = false
-  private readonly _directionPressed!: MoveInterface['directionPressed']
-  constructor (options: IInteractiveGraphicsOptions) {
-    super()
-    this.interactive = true
-    this.direction = options.direction
-    this.onPressedChange = options.onPressedChange
-    this._directionPressed = options.directionPressed
-    this.setupEventLesteners()
-  }
-
-  get isPressed (): boolean {
-    return this._isPressed
-  }
-
-  setIsPressed (pressed: boolean): void {
-    const toTrigger = pressed !== this._isPressed
-    this._isPressed = pressed
-    if (toTrigger) {
-      this.onPressedChange(this)
-    }
-  }
-
-  setupEventLesteners (): void {
-    this.on('pointerdown', (e) => {
-      this.setIsPressed(true)
-      logPointerEvent(e.type, e.pointerType)
-    })
-    this.on('pointermove', (e) => {
-      if (this.isPressed || e.pointerType === 'touch') {
-        this.setIsPressed(true)
-      } else if (e.pointerType === 'mouse') {
-        // try to detect pressed state if user came from another pressed polygon
-      }
-      logPointerEvent(e.type, e.pointerType)
-    })
-    this.on('pointerup', (e) => {
-      this.setIsPressed(false)
-      logPointerEvent(e.type, e.pointerType)
-    })
-    this.on('pointerleave', (e) => {
-      this.setIsPressed(false)
-      logPointerEvent(e.type, e.pointerType)
-    })
-  }
 }
 
 export class MoveInterface extends Container {
   public playerWidth!: number
   public playerHeight!: number
   public onDirectionPressedChange!: IMoveInterfaceOptions['onDirectionPressedChange']
-  public upPolygon!: InteractiveGraphics
-  public upRightPolygon!: InteractiveGraphics
-  public rightPolygon!: InteractiveGraphics
-  public downRightPolygon!: InteractiveGraphics
-  public downPolygon!: InteractiveGraphics
-  public downLeftPolygon!: InteractiveGraphics
-  public leftPolygon!: InteractiveGraphics
-  public upLeftPolygon!: InteractiveGraphics
+  public polygon!: Graphics
+  public isPressed = false
 
-  public directionPressed = {
+  public directionPressed: Record<EnumDirection, boolean> = {
     up: false,
-    upRight: false,
     right: false,
-    downRight: false,
     down: false,
-    downLeft: false,
-    left: false,
-    upLeft: false
+    left: false
   }
 
   constructor (options: IMoveInterfaceOptions) {
     super()
+    this.interactive = true
     this.playerWidth = options.playerWidth
     this.playerHeight = options.playerHeight
     this.onDirectionPressedChange = options.onDirectionPressedChange
@@ -118,73 +49,12 @@ export class MoveInterface extends Container {
   }
 
   setup (): void {
-    const upPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.up,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(upPolygon)
-    this.upPolygon = upPolygon
+    const polygon = new Graphics()
+    polygon.alpha = logMoveInterface.enabled ? 0.5 : 0
+    this.addChild(polygon)
+    this.polygon = polygon
 
-    const upRightPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.upRight,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(upRightPolygon)
-    this.upRightPolygon = upRightPolygon
-
-    const rightPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.right,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(rightPolygon)
-    this.rightPolygon = rightPolygon
-
-    const downRightPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.downRight,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(downRightPolygon)
-    this.downRightPolygon = downRightPolygon
-
-    const downPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.down,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(downPolygon)
-    this.downPolygon = downPolygon
-
-    const downLeftPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.downLeft,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(downLeftPolygon)
-    this.downLeftPolygon = downLeftPolygon
-
-    const leftPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.left,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(leftPolygon)
-    this.leftPolygon = leftPolygon
-
-    const upLeftPolygon = new InteractiveGraphics({
-      direction: MoveInterfaceDirection.upLeft,
-      directionPressed: this.directionPressed,
-      onPressedChange: this.handlePressedChange
-    })
-    this.addChild(upLeftPolygon)
-    this.upLeftPolygon = upLeftPolygon;
-
-    [upPolygon, upRightPolygon, rightPolygon, downRightPolygon, downPolygon, downLeftPolygon, leftPolygon, upLeftPolygon].forEach(spr => {
-      spr.alpha = logMoveInterface.enabled ? 0.5 : 0
-    })
+    this.setupEventLesteners()
   }
 
   draw ({
@@ -206,86 +76,102 @@ export class MoveInterface extends Container {
     const halfTop = halfHeight - this.playerHeight / 2
     const halfBottom = halfHeight + this.playerHeight / 2
 
-    this.upPolygon.beginFill(upFillColor)
-    this.upPolygon.drawPolygon([
+    this.polygon.beginFill(upFillColor)
+    this.polygon.drawPolygon([
       { x: halfLeft, y: 0 }, { x: halfRight, y: 0 },
-      { x: halfRight, y: halfTop }, { x: halfWidth, y: halfHeight },
-      { x: halfLeft, y: halfTop }
+      { x: halfRight, y: halfTop }, { x: halfLeft, y: halfTop }
     ])
-    this.upPolygon.endFill()
+    this.polygon.endFill()
 
-    this.upRightPolygon.beginFill(upRightFillColor)
-    this.upRightPolygon.drawPolygon([
+    this.polygon.beginFill(upRightFillColor)
+    this.polygon.drawPolygon([
       { x: halfRight, y: 0 }, { x: viewWidth, y: 0 },
       { x: viewWidth, y: halfTop }, { x: halfRight, y: halfTop }
     ])
-    this.upRightPolygon.endFill()
+    this.polygon.endFill()
 
-    this.rightPolygon.beginFill(rightFillColor)
-    this.rightPolygon.drawPolygon([
+    this.polygon.beginFill(rightFillColor)
+    this.polygon.drawPolygon([
       { x: halfRight, y: halfTop }, { x: viewWidth, y: halfTop },
-      { x: viewWidth, y: halfBottom }, { x: halfRight, y: halfBottom },
-      { x: halfWidth, y: halfHeight }
+      { x: viewWidth, y: halfBottom }, { x: halfRight, y: halfBottom }
     ])
-    this.rightPolygon.endFill()
+    this.polygon.endFill()
 
-    this.downRightPolygon.beginFill(downRightFillColor)
-    this.downRightPolygon.drawPolygon([
+    this.polygon.beginFill(downRightFillColor)
+    this.polygon.drawPolygon([
       { x: halfRight, y: halfBottom }, { x: viewWidth, y: halfBottom },
       { x: viewWidth, y: viewHeight }, { x: halfRight, y: viewHeight }
     ])
-    this.downRightPolygon.endFill()
+    this.polygon.endFill()
 
-    this.downPolygon.beginFill(downFillColor)
-    this.downPolygon.drawPolygon([
-      { x: halfLeft, y: halfBottom }, { x: viewWidth, y: viewHeight },
-      { x: halfRight, y: halfBottom }, { x: halfRight, y: viewHeight },
-      { x: halfLeft, y: viewHeight }
+    this.polygon.beginFill(downFillColor)
+    this.polygon.drawPolygon([
+      { x: halfLeft, y: halfBottom }, { x: halfRight, y: halfBottom },
+      { x: halfRight, y: viewHeight }, { x: halfLeft, y: viewHeight }
     ])
-    this.downPolygon.endFill()
+    this.polygon.endFill()
 
-    this.downLeftPolygon.beginFill(downLeftFillColor)
-    this.downLeftPolygon.drawPolygon([
+    this.polygon.beginFill(downLeftFillColor)
+    this.polygon.drawPolygon([
       { x: 0, y: halfBottom }, { x: halfLeft, y: halfBottom },
       { x: halfLeft, y: viewHeight }, { x: 0, y: viewHeight }
     ])
-    this.downLeftPolygon.endFill()
+    this.polygon.endFill()
 
-    this.leftPolygon.beginFill(leftFillColor)
-    this.leftPolygon.drawPolygon([
+    this.polygon.beginFill(leftFillColor)
+    this.polygon.drawPolygon([
       { x: 0, y: halfTop }, { x: halfLeft, y: halfTop },
-      { x: halfWidth, y: halfHeight }, { x: halfLeft, y: halfBottom },
-      { x: 0, y: halfBottom }
+      { x: halfLeft, y: halfBottom }, { x: 0, y: halfBottom }
     ])
-    this.leftPolygon.endFill()
+    this.polygon.endFill()
 
-    this.upLeftPolygon.beginFill(upLeftFillColor)
-    this.upLeftPolygon.drawPolygon([
+    this.polygon.beginFill(upLeftFillColor)
+    this.polygon.drawPolygon([
       { x: 0, y: 0 }, { x: halfLeft, y: 0 },
       { x: halfLeft, y: halfTop }, { x: 0, y: halfTop }
     ])
-    this.upLeftPolygon.endFill()
+    this.polygon.endFill()
   }
 
-  handlePressedChange = (item: InteractiveGraphics): void => {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    logMoveInterfacePressed(`dir=${item.direction} pressed=${item.isPressed}`)
-    if (item === this.upPolygon) {
-      this.directionPressed.up = item.isPressed
-    } else if (item === this.upRightPolygon) {
-      this.directionPressed.upRight = item.isPressed
-    } else if (item === this.rightPolygon) {
-      this.directionPressed.right = item.isPressed
-    } else if (item === this.downRightPolygon) {
-      this.directionPressed.downRight = item.isPressed
-    } else if (item === this.downPolygon) {
-      this.directionPressed.down = item.isPressed
-    } else if (item === this.downLeftPolygon) {
-      this.directionPressed.downLeft = item.isPressed
-    } else if (item === this.leftPolygon) {
-      this.directionPressed.left = item.isPressed
-    } else if (item === this.upLeftPolygon) {
-      this.directionPressed.upLeft = item.isPressed
+  setupEventLesteners (): void {
+    this.on('pointerdown', (e) => {
+      this.setDirectionPressed(true, e.clientX, e.clientY)
+    })
+    this.on('pointermove', (e) => {
+      this.setDirectionPressed(undefined, e.clientX, e.clientY)
+    })
+    this.on('pointerup', (e) => {
+      this.setDirectionPressed(false, e.clientX, e.clientY)
+    })
+  }
+
+  setDirectionPressed (pressed: boolean | undefined, x: number, y: number): void {
+    if (typeof pressed === 'boolean') {
+      this.isPressed = pressed
+    }
+    Object.keys(this.directionPressed).forEach(key => {
+      this.directionPressed[key as EnumDirection] = false
+    })
+    if (this.isPressed) {
+      const halfWidth = this.width / 2
+      const halfHeight = this.height / 2
+      const halfLeft = halfWidth - this.playerWidth / 2
+      const halfRight = halfWidth + this.playerWidth / 2
+      const halfTop = halfHeight - this.playerHeight / 2
+      const halfBottom = halfHeight + this.playerHeight / 2
+      if (x >= halfRight) {
+        this.directionPressed.right = true
+      } else if (x <= halfLeft) {
+        this.directionPressed.left = true
+      }
+
+      if (y >= halfBottom) {
+        this.directionPressed.down = true
+      } else if (y <= halfTop) {
+        this.directionPressed.up = true
+      }
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      logPointerEvent(`pressed=${pressed} x=${x} y=${y} hw=${halfWidth} hh=${halfHeight}`)
     }
     this.onDirectionPressedChange()
   }

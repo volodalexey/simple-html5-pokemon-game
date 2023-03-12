@@ -252,12 +252,12 @@ export class MapScreen extends Container implements IScreen {
   }
 
   handleDirectionPressedChange = (): void => {
-    const { up, upRight, right, downRight, down, downLeft, left, upLeft } = this.moveInterface.directionPressed
+    const { up, right, down, left } = this.moveInterface.directionPressed
     this.player.setImpulse({
-      up: up || upRight || upLeft,
-      right: right || upRight || downRight,
-      down: down || downRight || downLeft,
-      left: left || upLeft || downLeft
+      up,
+      right,
+      down,
+      left
     })
   }
 }
