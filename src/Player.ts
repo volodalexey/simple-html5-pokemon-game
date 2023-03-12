@@ -20,10 +20,10 @@ enum PlayerDirection {
 }
 
 interface IImpulse {
-  up: boolean
-  left: boolean
-  right: boolean
-  down: boolean
+  up: number
+  left: number
+  right: number
+  down: number
 }
 
 export class Player extends Container {
@@ -35,13 +35,12 @@ export class Player extends Container {
   public right!: AnimatedSprite
   public down!: AnimatedSprite
   public velocity = 3
-  public isMoving = false
 
   private readonly impulse: IImpulse = {
-    up: false,
-    left: false,
-    right: false,
-    down: false
+    up: 0,
+    left: 0,
+    right: 0,
+    down: 0
   }
 
   constructor (options: IPlayerOptions) {
@@ -127,77 +126,75 @@ export class Player extends Container {
     /* eslint-disable @typescript-eslint/restrict-template-expressions */
     logPlayerImpulse(`Got impulse up=${impulse.up} left=${impulse.left} right=${impulse.right} down=${impulse.down}`)
     Object.assign(this.impulse, impulse)
-    if (impulse.up === true && this.impulse.down) {
-      this.impulse.down = false
-    } else if (impulse.left === true && this.impulse.right) {
-      this.impulse.right = false
-    } else if (impulse.right === true && this.impulse.left) {
-      this.impulse.left = false
-    } else if (impulse.down === true && this.impulse.up) {
-      this.impulse.up = false
+    if (typeof impulse.up === 'number' && impulse.up > 0 && this.impulse.down > 0) {
+      this.impulse.down = 0
+    } else if (typeof impulse.left === 'number' && impulse.left > 0 && this.impulse.right > 0) {
+      this.impulse.right = 0
+    } else if (typeof impulse.right === 'number' && impulse.right > 0 && this.impulse.left > 0) {
+      this.impulse.left = 0
+    } else if (typeof impulse.down === 'number' && impulse.down > 0 && this.impulse.up > 0) {
+      this.impulse.up = 0
     }
-    if (this.impulse.left) {
+    if (this.impulse.left > 0) {
       this.setDirection(PlayerDirection.left)
-    } else if (this.impulse.right) {
+    } else if (this.impulse.right > 0) {
       this.setDirection(PlayerDirection.right)
-    } else if (this.impulse.up) {
+    } else if (this.impulse.up > 0) {
       this.setDirection(PlayerDirection.up)
-    } else if (this.impulse.down) {
+    } else if (this.impulse.down > 0) {
       this.setDirection(PlayerDirection.down)
     }
-    if (this.impulse.up || this.impulse.left || this.impulse.right || this.impulse.down) {
+    if (this.impulse.left > 0 || this.impulse.right > 0 || this.impulse.up > 0 || this.impulse.down > 0) {
       this.playAnimation()
-      this.isMoving = true
     } else {
       this.stopAllAnimations()
-      this.isMoving = false
     }
 
-    logPlayerImpulse(`(Moving=${this.isMoving} up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`)
+    logPlayerImpulse(`up=${this.impulse.up} left=${this.impulse.left} right=${this.impulse.right} down=${this.impulse.down}`)
     /* eslint-enable @typescript-eslint/restrict-template-expressions */
   }
 
   addUpImpulse (): void {
-    this.setImpulse({ up: true })
+    this.setImpulse({ up: 1 })
   }
 
   subUpImpulse (): void {
-    this.setImpulse({ up: false })
+    this.setImpulse({ up: 0 })
   }
 
   addLeftImpulse (): void {
-    this.setImpulse({ left: true })
+    this.setImpulse({ left: 1 })
   }
 
   subLeftImpulse (): void {
-    this.setImpulse({ left: false })
+    this.setImpulse({ left: 0 })
   }
 
   addRightImpulse (): void {
-    this.setImpulse({ right: true })
+    this.setImpulse({ right: 1 })
   }
 
   subRightImpulse (): void {
-    this.setImpulse({ right: false })
+    this.setImpulse({ right: 0 })
   }
 
   addDownImpulse (): void {
-    this.setImpulse({ down: true })
+    this.setImpulse({ down: 1 })
   }
 
   subDownImpulse (): void {
-    this.setImpulse({ down: false })
+    this.setImpulse({ down: 0 })
   }
 
   releaseAllImpulse (): void {
-    this.setImpulse({ up: false, left: false, right: false, down: false })
+    this.setImpulse({ up: 0, left: 0, right: 0, down: 0 })
   }
 
   getVerticalImpulse (): number {
-    return this.impulse.up ? -this.velocity : this.impulse.down ? this.velocity : 0
+    return this.impulse.up > 0 ? -this.velocity * this.impulse.up : this.impulse.down > 0 ? this.velocity * this.impulse.down : 0
   }
 
   getHorizontalImpulse (): number {
-    return this.impulse.left ? -this.velocity : this.impulse.right ? this.velocity : 0
+    return this.impulse.left > 0 ? -this.velocity * this.impulse.left : this.impulse.right > 0 ? this.velocity * this.impulse.right : 0
   }
 }

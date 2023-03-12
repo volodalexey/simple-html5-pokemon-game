@@ -30,12 +30,13 @@ export class MoveInterface extends Container {
   public onDirectionPressedChange!: IMoveInterfaceOptions['onDirectionPressedChange']
   public polygon!: Graphics
   public isPressed = false
+  public maximizePressure: 'mainAxis' | 'allAxes' | 'none' = 'allAxes'
 
-  public directionPressed: Record<EnumDirection, boolean> = {
-    up: false,
-    right: false,
-    down: false,
-    left: false
+  public directionPressed: Record<EnumDirection, number> = {
+    up: 0,
+    right: 0,
+    down: 0,
+    left: 0
   }
 
   constructor (options: IMoveInterfaceOptions) {
@@ -149,26 +150,75 @@ export class MoveInterface extends Container {
     if (typeof pressed === 'boolean') {
       this.isPressed = pressed
     }
-    Object.keys(this.directionPressed).forEach(key => {
-      this.directionPressed[key as EnumDirection] = false
+    const { directionPressed } = this
+    Object.keys(directionPressed).forEach(key => {
+      directionPressed[key as EnumDirection] = 0
     })
     if (this.isPressed) {
       const halfWidth = this.width / 2
       const halfHeight = this.height / 2
       const halfLeft = halfWidth - this.playerWidth / 2
+      const maxHorizontal = halfLeft
       const halfRight = halfWidth + this.playerWidth / 2
       const halfTop = halfHeight - this.playerHeight / 2
+      const maxVertical = halfTop
       const halfBottom = halfHeight + this.playerHeight / 2
-      if (x >= halfRight) {
-        this.directionPressed.right = true
-      } else if (x <= halfLeft) {
-        this.directionPressed.left = true
+
+      const rightPressure = x >= halfRight ? (x - halfRight) / maxHorizontal : 0
+      const leftPressure = x <= halfLeft ? (halfLeft - x) / maxHorizontal : 0
+      if (rightPressure > 0) {
+        directionPressed.right = rightPressure
+      } else if (leftPressure > 0) {
+        directionPressed.left = leftPressure
       }
 
-      if (y >= halfBottom) {
-        this.directionPressed.down = true
-      } else if (y <= halfTop) {
-        this.directionPressed.up = true
+      const downPressure = y >= halfBottom ? (y - halfBottom) / maxVertical : 0
+      const upPressure = y <= halfTop ? (halfTop - y) / maxVertical : 0
+      if (downPressure > 0) {
+        directionPressed.down = downPressure
+      } else if (upPressure > 0) {
+        directionPressed.up = upPressure
+      }
+      if (this.maximizePressure !== 'none') {
+        if (this.maximizePressure === 'mainAxis') {
+          const maxHorizontal = Math.max(directionPressed.left, directionPressed.right)
+          const maxVertical = Math.max(directionPressed.up, directionPressed.down)
+          if (maxHorizontal > 0 && maxHorizontal > maxVertical) {
+            if (directionPressed.left > 0) {
+              directionPressed.left = 1
+            } else if (directionPressed.right > 0) {
+              directionPressed.right = 1
+            }
+          } else if (maxVertical > 0 && maxVertical > maxHorizontal) {
+            if (directionPressed.up > 0) {
+              directionPressed.up = 1
+            } else if (directionPressed.down > 0) {
+              directionPressed.down = 1
+            }
+          } else if (maxHorizontal > 0 && maxHorizontal === maxVertical) {
+            if (directionPressed.left > 0) {
+              directionPressed.left = 1
+            } else if (directionPressed.right > 0) {
+              directionPressed.right = 1
+            }
+            if (directionPressed.up > 0) {
+              directionPressed.up = 1
+            } else if (directionPressed.down > 0) {
+              directionPressed.down = 1
+            }
+          }
+        } else {
+          if (directionPressed.left > 0) {
+            directionPressed.left = 1
+          } else if (directionPressed.right > 0) {
+            directionPressed.right = 1
+          }
+          if (directionPressed.up > 0) {
+            directionPressed.up = 1
+          } else if (directionPressed.down > 0) {
+            directionPressed.down = 1
+          }
+        }
       }
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       logPointerEvent(`pressed=${pressed} x=${x} y=${y} hw=${halfWidth} hh=${halfHeight}`)

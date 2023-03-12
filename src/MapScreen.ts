@@ -129,10 +129,13 @@ export class MapScreen extends Container implements IScreen {
       return
     }
 
-    if (this.player.isMoving) {
-      const pRect = {
-        x: this.player.x + this.player.getHorizontalImpulse(),
-        y: this.player.y + this.player.getVerticalImpulse(),
+    let isMovingHorizontal = false
+    const horizontalPlayerImpulse = this.player.getHorizontalImpulse()
+    if (horizontalPlayerImpulse !== 0) {
+      isMovingHorizontal = true
+      const pRectHor = {
+        x: this.player.x + horizontalPlayerImpulse,
+        y: this.player.y,
         width: this.player.width,
         height: this.player.height
       }
@@ -140,27 +143,55 @@ export class MapScreen extends Container implements IScreen {
         const boundary = this.boundaries[i]
         if (
           rectangularCollision({
-            rect1: pRect,
+            rect1: pRectHor,
             rect2: boundary
           })
         ) {
-          logPlayerCollision('Collision detected! Player stopped')
-          this.player.isMoving = false
+          logPlayerCollision('Horizontal collision detected! Player stopped')
+          isMovingHorizontal = false
           break
         }
       }
     }
-    if (this.player.isMoving) {
-      const horizontalPlayerImpulse = this.player.getHorizontalImpulse()
-      const verticalPlayerImpulse = this.player.getVerticalImpulse()
 
+    let isMovingVertical = false
+    const verticalPlayerImpulse = this.player.getVerticalImpulse()
+    if (verticalPlayerImpulse !== 0) {
+      isMovingVertical = true
+      const pRectVer = {
+        x: this.player.x,
+        y: this.player.y + verticalPlayerImpulse,
+        width: this.player.width,
+        height: this.player.height
+      }
+      for (let i = 0; i < this.boundaries.length; i++) {
+        const boundary = this.boundaries[i]
+        if (
+          rectangularCollision({
+            rect1: pRectVer,
+            rect2: boundary
+          })
+        ) {
+          logPlayerCollision('Vertical collision detected! Player stopped')
+          isMovingVertical = false
+          break
+        }
+      }
+    }
+
+    if (isMovingHorizontal) {
       this.player.x += horizontalPlayerImpulse
-      this.player.y += verticalPlayerImpulse
 
       this.x -= horizontalPlayerImpulse
-      this.y -= verticalPlayerImpulse
 
       this.moveInterface.x += horizontalPlayerImpulse
+    }
+
+    if (isMovingVertical) {
+      this.player.y += verticalPlayerImpulse
+
+      this.y -= verticalPlayerImpulse
+
       this.moveInterface.y += verticalPlayerImpulse
     }
   }
