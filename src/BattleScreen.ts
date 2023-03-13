@@ -1,9 +1,10 @@
 import { Container, type Texture, Sprite } from 'pixi.js'
+import { ATTACKS, AttackType } from './attacks'
 import { AttacksBox } from './AttacksBox'
 import { CharacterBox } from './CharacterBox'
 import { type IScreen } from './classes'
 import { DialogueBox } from './DialogueBox'
-import { logBattleLayout } from './logger'
+import { logBattleLayout, logBattleQueue } from './logger'
 import { Monster } from './Monster'
 
 interface IBattleScreenOptions {
@@ -13,7 +14,9 @@ interface IBattleScreenOptions {
     background: Texture
     draggle: Texture[]
     emby: Texture[]
+    fireball: Texture[]
   }
+  onBattleEnd: () => void
 }
 
 export class BattleScreen extends Container implements IScreen {
@@ -25,9 +28,12 @@ export class BattleScreen extends Container implements IScreen {
   public background!: Sprite
   public attacksBox!: AttacksBox
   public dialogueBox!: DialogueBox
+  public onBattleEnd!: IBattleScreenOptions['onBattleEnd']
+  public queue: Array<() => void> = []
 
   constructor (options: IBattleScreenOptions) {
     super()
+    this.onBattleEnd = options.onBattleEnd
     this.setup(options)
   }
 
@@ -39,10 +45,6 @@ export class BattleScreen extends Container implements IScreen {
     this.setupDialogueBox()
 
     this.hideDialogue()
-
-    setTimeout(() => {
-      this.showDialogue('FFF')
-    }, 2000)
   }
 
   setupBackground ({ sprites: { background } }: IBattleScreenOptions): void {
@@ -51,14 +53,15 @@ export class BattleScreen extends Container implements IScreen {
     this.background = bgSpr
   }
 
-  setupMonsters ({ sprites: { draggle, emby } }: IBattleScreenOptions): void {
+  setupMonsters ({ sprites: { draggle, emby, fireball } }: IBattleScreenOptions): void {
     const draggleMonster = new Monster({
       x: 800,
       y: 95,
       name: 'Draggle',
       animationTexture: draggle,
-      attacks: [Monster.ATTACKS.Tackle, Monster.ATTACKS.Fireball],
-      isEnemy: true
+      attackTypes: [AttackType.Tackle, AttackType.Fireball],
+      isEnemy: true,
+      fireballTexture: fireball
     })
     this.addChild(draggleMonster)
     this.draggle = draggleMonster
@@ -68,8 +71,9 @@ export class BattleScreen extends Container implements IScreen {
       y: 330,
       name: 'Emby',
       animationTexture: emby,
-      attacks: [Monster.ATTACKS.Tackle, Monster.ATTACKS.Fireball],
-      isEnemy: false
+      attackTypes: [AttackType.Tackle, AttackType.Fireball],
+      isEnemy: false,
+      fireballTexture: fireball
     })
     this.addChild(embyMonster)
     this.emby = embyMonster
@@ -144,7 +148,7 @@ export class BattleScreen extends Container implements IScreen {
 
   setupAttacksBar (): void {
     this.attacksBox = new AttacksBox({
-      attacks: this.emby.attacks,
+      attackTypes: this.emby.attackTypes,
       boxWidth: this.background.width,
       onAttackClick: this.handleAttackClick
     })
@@ -152,8 +156,55 @@ export class BattleScreen extends Container implements IScreen {
     this.attacksBox.y = this.background.height - this.attacksBox.height
   }
 
-  handleAttackClick = (attack: string): void => {
-    console.log(attack)
+  handleAttackClick = (attackType: AttackType): void => {
+    const { queue, draggle, emby, draggleBox, embyBox } = this
+    logBattleQueue(`queue.push (${queue.length}) attack`)
+    if (queue.length === 0) {
+      emby.attack({
+        attackType,
+        recipient: draggle,
+        recipientBox: draggleBox,
+        container: this
+      })
+      this.showDialogue(`${emby.name} used ${ATTACKS[attackType].name}`)
+
+      if (draggle.health <= 0) {
+        logBattleQueue(`queue.push (${queue.length}) draggle fainted`)
+        queue.push(() => {
+          this.showDialogue(`${draggle.name} fainted!`)
+          draggle.faint()
+        })
+        logBattleQueue(`queue.push (${queue.length}) onBattleEnd`)
+        queue.push(() => {
+          this.onBattleEnd()
+        })
+      } else {
+        const maxAttackIdx = draggle.attackTypes.length
+        const randomAttackType = draggle.attackTypes[Math.floor(Math.random() * maxAttackIdx)]
+
+        logBattleQueue(`queue.push (${queue.length}) draggle attack`)
+        queue.push(() => {
+          draggle.attack({
+            attackType: randomAttackType,
+            recipient: emby,
+            recipientBox: embyBox,
+            container: this
+          })
+
+          if (emby.health <= 0) {
+            logBattleQueue(`queue.push (${queue.length}) emby fainted`)
+            queue.push(() => {
+              this.showDialogue(`${emby.name} fainted!`)
+              emby.faint()
+            })
+            logBattleQueue(`queue.push (${queue.length}) onBattleEnd`)
+            queue.push(() => {
+              this.onBattleEnd()
+            })
+          }
+        })
+      }
+    }
   }
 
   setupDialogueBox (): void {
@@ -167,11 +218,21 @@ export class BattleScreen extends Container implements IScreen {
 
   showDialogue (text: string): void {
     this.dialogueBox.visible = true
+    this.dialogueBox.text.text = text
     this.attacksBox.visible = false
   }
 
   hideDialogue = (): void => {
     this.dialogueBox.visible = false
     this.attacksBox.visible = true
+    if (this.queue.length > 0) {
+      logBattleQueue('before', this.queue.length)
+      const task = this.queue.shift()
+      if (typeof task === 'function') {
+        logBattleQueue('task()')
+        task()
+      }
+    }
+    logBattleQueue('after', this.queue.length)
   }
 }

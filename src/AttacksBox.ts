@@ -1,17 +1,17 @@
 import { Container, Graphics, Text } from 'pixi.js'
-import { MonsterAttack } from './Monster'
+import { ATTACKS, type AttackType } from './attacks'
 
 interface IAttacksBarOptions {
   boxWidth: number
-  attacks: MonsterAttack[]
-  onAttackClick: (attack: string) => void
+  attackTypes: AttackType[]
+  onAttackClick: (attackType: AttackType) => void
 }
 
 interface IAttackButtonOptions {
-  attack: string
+  attackType: AttackType
   btnWidth: number
   btnHeight: number
-  onHover: (attack: string) => void
+  onHover: (attackType: AttackType) => void
   onClick: (attackBtn: AttackButton) => void
 }
 
@@ -22,7 +22,7 @@ class AttackButton extends Container {
   public buttonHoverColor = 0xdddddd
   public textColor = 0x000000
   public textSize = 16
-  public attack!: string
+  public attackType!: AttackType
   public btnWidth!: number
   public btnHeight!: number
   public onHover!: IAttackButtonOptions['onHover']
@@ -30,7 +30,7 @@ class AttackButton extends Container {
   constructor (options: IAttackButtonOptions) {
     super()
     this.interactive = true
-    this.attack = options.attack
+    this.attackType = options.attackType
     this.cursor = 'pointer'
     this.btnWidth = options.btnWidth
     this.btnHeight = options.btnHeight
@@ -40,12 +40,12 @@ class AttackButton extends Container {
     this.draw(this.buttonIdleColor)
   }
 
-  setup ({ attack, btnWidth, btnHeight }: IAttackButtonOptions): void {
+  setup ({ attackType, btnWidth, btnHeight }: IAttackButtonOptions): void {
     const background = new Graphics()
     this.addChild(background)
     this.background = background
 
-    const text = new Text(this.attack, {
+    const text = new Text(ATTACKS[this.attackType].name, {
       fontFamily: 'Press Start 2P',
       fontSize: this.textSize,
       fill: this.textColor,
@@ -59,14 +59,14 @@ class AttackButton extends Container {
     this.on('pointerdown', (e) => {
       if (e.pointerType === 'touch') {
         this.draw(this.buttonHoverColor)
-        this.onHover(attack)
+        this.onHover(attackType)
       }
       this.onClick(this)
     })
     this.on('pointerenter', (e) => {
       if (e.pointerType === 'mouse') {
         this.draw(this.buttonHoverColor)
-        this.onHover(attack)
+        this.onHover(attackType)
       }
     })
     this.on('pointerleave', (e) => {
@@ -111,23 +111,15 @@ export class AttacksBox extends Container {
     this.box = new Graphics()
     this.addChild(this.box)
 
-    const attackWidth = this.attacksWidth / options.attacks.length
-    options.attacks.forEach((attack, idx) => {
+    const attackWidth = this.attacksWidth / options.attackTypes.length
+    options.attackTypes.forEach((attackType, idx) => {
       const attackButton = new AttackButton({
-        attack,
+        attackType,
         btnWidth: attackWidth,
         btnHeight: this.boxHeight - this.boxBorderThick,
-        onHover: (attack) => {
-          switch (attack) {
-            case MonsterAttack.Tackle:
-              this.attackText.text = 'Normal'
-              this.attackText.style.fill = 0x000000
-              break
-            case MonsterAttack.Fireball:
-              this.attackText.text = 'Fire'
-              this.attackText.style.fill = 0xff0000
-              break
-          }
+        onHover: (attackType) => {
+          this.attackText.text = ATTACKS[attackType].description
+          this.attackText.style.fill = ATTACKS[attackType].color
         },
         onClick: this.handleAttackBtnClick
       })
@@ -163,6 +155,6 @@ export class AttacksBox extends Container {
   }
 
   handleAttackBtnClick = (attackBtn: AttackButton): void => {
-    this.onAttackClick(attackBtn.attack)
+    this.onAttackClick(attackBtn.attackType)
   }
 }

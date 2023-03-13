@@ -75,6 +75,11 @@ export class CharacterBox extends Container {
   }
 
   updateHealth (health: number): void {
+    if (health <= 0) {
+      health = 0
+    } else if (health >= 100) {
+      health = 100
+    }
     gsap.to(this.lifeBarFull, {
       width: this.lifeBarWidth * health / 100
     })

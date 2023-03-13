@@ -98,8 +98,10 @@ export class World {
       sprites: {
         draggle: animations['Draggle-Idle'],
         emby: animations['Emby-Idle'],
-        background: battleBackgroundTexture
-      }
+        background: battleBackgroundTexture,
+        fireball: animations.Fireball
+      },
+      onBattleEnd: this.handleBattleEnd
     })
     this.splashScreen = new SplashScreen({
       viewWidth: width,
@@ -214,5 +216,9 @@ export class World {
 
   handleBattleStart = (): void => {
     this.setScreen(WorldScreen.battle)
+  }
+
+  handleBattleEnd = (): void => {
+    this.setScreen(WorldScreen.map)
   }
 }
