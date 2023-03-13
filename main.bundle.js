@@ -2,6 +2,18 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/styles.css":
+/*!************************!*\
+  !*** ./src/styles.css ***!
+  \************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+// extracted by mini-css-extract-plugin
+
+
+/***/ }),
+
 /***/ "./src/BattleScreen.ts":
 /*!*****************************!*\
   !*** ./src/BattleScreen.ts ***!
@@ -12,6 +24,8 @@
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BattleScreen = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const CharacterBox_1 = __webpack_require__(/*! ./CharacterBox */ "./src/CharacterBox.ts");
+const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
 class BattleScreen extends pixi_js_1.Container {
     constructor(options) {
         super();
@@ -22,6 +36,7 @@ class BattleScreen extends pixi_js_1.Container {
     setup(options) {
         this.setupBackground(options);
         this.setupVersus(options);
+        this.setupCharacterBoxes(options);
     }
     setupBackground({ sprites: { background } }) {
         const bgSpr = new pixi_js_1.Sprite(background);
@@ -31,26 +46,74 @@ class BattleScreen extends pixi_js_1.Container {
     setupVersus({ sprites: { draggle, emby } }) {
         const drlSpr = new pixi_js_1.AnimatedSprite(draggle);
         drlSpr.animationSpeed = this.animationSpeed;
-        drlSpr.play();
         this.addChild(drlSpr);
         this.draggle = drlSpr;
+        this.draggle.x = 800;
+        this.draggle.y = 95;
         const embSpr = new pixi_js_1.AnimatedSprite(emby);
         embSpr.animationSpeed = this.animationSpeed;
-        embSpr.play();
         this.addChild(embSpr);
         this.emby = embSpr;
+        this.emby.x = 300;
+        this.emby.y = 330;
     }
     activate() {
         this.isActive = true;
+        this.draggle.play();
+        this.emby.play();
     }
     deactivate() {
         this.isActive = false;
+        this.draggle.stop();
+        this.emby.stop();
     }
-    handleScreenTick() {
-        if (!this.isActive) {
+    handleScreenTick() { }
+    handleScreenResize({ viewWidth, viewHeight }) {
+        const availableWidth = viewWidth;
+        const availableHeight = viewHeight;
+        const totalWidth = this.background.width;
+        const totalHeight = this.background.height;
+        let scale = 1;
+        if (totalHeight >= totalWidth) {
+            scale = availableHeight / totalHeight;
+            if (scale * totalWidth > availableWidth) {
+                scale = availableWidth / totalWidth;
+            }
+            (0, logger_1.logBattleLayout)(`By height (sc=${scale})`);
         }
+        else {
+            scale = availableWidth / totalWidth;
+            (0, logger_1.logBattleLayout)(`By width (sc=${scale})`);
+            if (scale * totalHeight > availableHeight) {
+                scale = availableHeight / totalHeight;
+            }
+        }
+        const occupiedWidth = Math.floor(totalWidth * scale);
+        const occupiedHeight = Math.floor(totalHeight * scale);
+        const x = availableWidth > occupiedWidth ? (availableWidth - occupiedWidth) / 2 : 0;
+        const y = availableHeight > occupiedHeight ? (availableHeight - occupiedHeight) / 2 : 0;
+        (0, logger_1.logBattleLayout)(`aw=${availableWidth} (ow=${occupiedWidth}) x=${x} ah=${availableHeight} (oh=${occupiedHeight}) y=${y}`);
+        this.x = x;
+        this.width = occupiedWidth;
+        this.y = y;
+        this.height = occupiedHeight;
+        (0, logger_1.logBattleLayout)(`x=${x} y=${y} w=${this.width} h=${this.height}`);
     }
-    handleScreenResize(options) {
+    setupCharacterBoxes(options) {
+        const draggleBox = new CharacterBox_1.CharacterBox({
+            name: 'Draggle'
+        });
+        draggleBox.x = 50;
+        draggleBox.y = 50;
+        this.addChild(draggleBox);
+        this.draggleBox = draggleBox;
+        const embyBox = new CharacterBox_1.CharacterBox({
+            name: 'Emby'
+        });
+        embyBox.x = this.background.width - (embyBox.width + 50);
+        embyBox.y = 330;
+        this.addChild(embyBox);
+        this.embyBox = embyBox;
     }
 }
 exports.BattleScreen = BattleScreen;
@@ -93,6 +156,57 @@ class Boundary extends pixi_js_1.Graphics {
     }
 }
 exports.Boundary = Boundary;
+
+
+/***/ }),
+
+/***/ "./src/CharacterBox.ts":
+/*!*****************************!*\
+  !*** ./src/CharacterBox.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CharacterBox = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+class CharacterBox extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.boxWidth = 250;
+        this.boxHeight = 60;
+        this.boxColor = 0xffffff;
+        this.boxBorderThick = 4;
+        this.boxBorderColor = 0x000000;
+        this.name = options.name;
+        this.setup();
+        this.draw();
+    }
+    setup() {
+        this.box = new pixi_js_1.Graphics();
+        this.addChild(this.box);
+        this.lifeBar = new pixi_js_1.Graphics();
+        this.addChild(this.lifeBar);
+        this.text = new pixi_js_1.Text(this.name, {
+            fontFamily: 'Press Start 2P',
+            fontSize: 24,
+            fill: 0xff1010,
+            align: 'center'
+        });
+        this.addChild(this.text);
+    }
+    draw() {
+        const { box, boxBorderColor, boxWidth, boxHeight, boxColor, boxBorderThick } = this;
+        box.clear();
+        box.beginFill(boxBorderColor);
+        box.drawRect(0, 0, boxWidth, boxHeight);
+        box.endFill();
+        box.beginFill(boxColor);
+        box.drawRect(0 + boxBorderThick, 0 + boxBorderThick, boxWidth - boxBorderThick * 2, boxHeight - boxBorderThick * 2);
+        box.endFill();
+    }
+}
+exports.CharacterBox = CharacterBox;
 
 
 /***/ }),
@@ -169,6 +283,8 @@ class MapScreen extends pixi_js_1.Container {
         this.tilesPerRow = 70;
         this.boundaries = [];
         this.battleZones = [];
+        this.overlappingBattleTrigger = 0.5;
+        this.overlappingBattleChance = 0.01;
         this.handleKeydown = (e) => {
             const { player } = this;
             (0, logger_1.logKeydown)(e.key);
@@ -222,6 +338,7 @@ class MapScreen extends pixi_js_1.Container {
                 left
             });
         };
+        this.onBattleStart = options.onBattleStart;
         this.setup(options);
     }
     setup(options) {
@@ -301,6 +418,7 @@ class MapScreen extends pixi_js_1.Container {
     deactivate() {
         this.isActive = false;
         this.removeEventLesteners();
+        this.player.releaseAllImpulse();
     }
     handleScreenTick() {
         if (!this.isActive) {
@@ -347,6 +465,24 @@ class MapScreen extends pixi_js_1.Container {
                     (0, logger_1.logPlayerCollision)('Vertical collision detected! Player stopped');
                     isMovingVertical = false;
                     break;
+                }
+            }
+        }
+        if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
+            for (let i = 0; i < this.battleZones.length; i++) {
+                const battleZone = this.battleZones[i];
+                const overlappingArea = (Math.min(this.player.x + this.player.width, battleZone.x + battleZone.width) -
+                    Math.max(this.player.x, battleZone.x)) *
+                    (Math.min(this.player.y + this.player.height, battleZone.y + battleZone.height) -
+                        Math.max(this.player.y, battleZone.y));
+                if ((0, utils_1.rectangularCollision)({
+                    rect1: this.player,
+                    rect2: battleZone
+                }) &&
+                    overlappingArea > (this.player.width * this.player.height) * this.overlappingBattleTrigger &&
+                    Math.random() <= this.overlappingBattleChance) {
+                    (0, logger_1.logPlayerCollision)('Battle zone triggered');
+                    this.onBattleStart();
                 }
             }
         }
@@ -778,17 +914,71 @@ exports.Player = Player;
 
 /***/ }),
 
-/***/ "./src/World.ts":
-/*!**********************!*\
-  !*** ./src/World.ts ***!
-  \**********************/
+/***/ "./src/SplashScreen.ts":
+/*!*****************************!*\
+  !*** ./src/SplashScreen.ts ***!
+  \*****************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SplashScreen = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+class SplashScreen extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.isActive = false;
+        this.fillColor = 0x000000;
+        this.setup();
+        this.draw(options);
+        this.alpha = 0;
+    }
+    setup() {
+        this.graphics = new pixi_js_1.Graphics();
+        this.addChild(this.graphics);
+    }
+    draw({ viewWidth, viewHeight }) {
+        this.graphics.beginFill(this.fillColor);
+        this.graphics.drawRect(0, 0, viewWidth, viewHeight);
+        this.graphics.endFill();
+    }
+    activate() {
+        this.isActive = true;
+    }
+    deactivate() {
+        this.isActive = false;
+    }
+    handleScreenTick() { }
+    resizeGraphics({ viewWidth, viewHeight }) {
+        this.width = viewWidth;
+        this.height = viewHeight;
+    }
+    handleScreenResize(options) {
+        this.resizeGraphics(options);
+    }
+}
+exports.SplashScreen = SplashScreen;
+
+
+/***/ }),
+
+/***/ "./src/World.ts":
+/*!**********************!*\
+  !*** ./src/World.ts ***!
+  \**********************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.World = void 0;
+const gsap_1 = __importDefault(__webpack_require__(/*! gsap */ "./node_modules/gsap/index.js"));
 const MapScreen_1 = __webpack_require__(/*! ./MapScreen */ "./src/MapScreen.ts");
 const BattleScreen_1 = __webpack_require__(/*! ./BattleScreen */ "./src/BattleScreen.ts");
+const SplashScreen_1 = __webpack_require__(/*! ./SplashScreen */ "./src/SplashScreen.ts");
+const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
 var WorldScreen;
 (function (WorldScreen) {
     WorldScreen[WorldScreen["map"] = 0] = "map";
@@ -805,11 +995,18 @@ class World {
         };
         this.resizeHandler = () => {
             const params = { viewWidth: this.app.view.width, viewHeight: this.app.view.height };
-            this.mapScreen.handleScreenResize(params);
-            this.battleScreen.handleScreenResize(params);
+            switch (this.activeScreen) {
+                case WorldScreen.map:
+                    this.mapScreen.handleScreenResize(params);
+                    break;
+                case WorldScreen.battle:
+                    this.battleScreen.handleScreenResize(params);
+                    break;
+            }
+            this.splashScreen.handleScreenResize(params);
         };
         this.handleAppTick = () => {
-            switch (this.screen) {
+            switch (this.activeScreen) {
                 case WorldScreen.map:
                     this.mapScreen.handleScreenTick();
                     break;
@@ -818,16 +1015,23 @@ class World {
                     break;
             }
         };
+        this.handleBattleStart = () => {
+            this.setScreen(WorldScreen.battle);
+        };
         this.app = app;
         this.gameLoader = gameLoader;
         this.setup();
-        this.setScreen(WorldScreen.map);
+        this.setScreen(WorldScreen.battle, true);
+        this.resizeHandler();
+        if (logger_1.logWorld.enabled) {
+            (0, logger_1.logWorld)('window.world initialized!');
+            window.world = this;
+        }
     }
     setup() {
         this.setupCanvas();
         this.setupScreens();
         this.setupEventLesteners();
-        this.resizeHandler();
     }
     setupEventLesteners() {
         window.addEventListener('resize', this.resizeDeBounce);
@@ -859,17 +1063,25 @@ class World {
             mapSprites: {
                 background: worldBackgroundTexture,
                 foreground: worldForegroundTexture
-            }
+            },
+            onBattleStart: this.handleBattleStart
         });
         this.battleScreen = new BattleScreen_1.BattleScreen({
+            viewWidth: width,
+            viewHeight: height,
             sprites: {
                 draggle: animations['Draggle-Idle'],
                 emby: animations['Emby-Idle'],
                 background: battleBackgroundTexture
             }
         });
+        this.splashScreen = new SplashScreen_1.SplashScreen({
+            viewWidth: width,
+            viewHeight: height
+        });
         this.app.stage.addChild(this.mapScreen);
         this.app.stage.addChild(this.battleScreen);
+        this.app.stage.addChild(this.splashScreen);
     }
     cancelScheduledResizeHandler() {
         clearTimeout(this.resizeTimeoutId);
@@ -880,22 +1092,66 @@ class World {
             this.resizeHandler();
         }, this.resizeTimeout);
     }
-    setScreen(screen) {
+    setScreen(screen, force = false) {
         switch (screen) {
             case WorldScreen.map:
-                this.mapScreen.visible = true;
-                this.mapScreen.activate();
-                this.battleScreen.visible = false;
                 this.battleScreen.deactivate();
+                if (force) {
+                    this.battleScreen.visible = false;
+                    this.mapScreen.visible = true;
+                    this.mapScreen.activate();
+                }
+                else {
+                    this.splashScreen.alpha = 0;
+                    gsap_1.default.to(this.splashScreen, {
+                        alpha: 1,
+                        onComplete: () => {
+                            this.battleScreen.visible = false;
+                            this.mapScreen.visible = true;
+                            this.mapScreen.activate();
+                            gsap_1.default.to(this.splashScreen, {
+                                alpha: 0,
+                                duration: 0.4
+                            });
+                        }
+                    });
+                }
                 break;
             case WorldScreen.battle:
-                this.mapScreen.visible = false;
                 this.mapScreen.deactivate();
-                this.battleScreen.visible = true;
-                this.battleScreen.activate();
+                if (force) {
+                    this.mapScreen.visible = false;
+                    this.battleScreen.visible = true;
+                    this.battleScreen.activate();
+                }
+                else {
+                    this.splashScreen.alpha = 0;
+                    gsap_1.default.to(this.splashScreen, {
+                        alpha: 1,
+                        repeat: 3,
+                        yoyo: true,
+                        duration: 0.4,
+                        onComplete: () => {
+                            gsap_1.default.to(this.splashScreen, {
+                                alpha: 1,
+                                duration: 0.4,
+                                onComplete: () => {
+                                    this.mapScreen.visible = false;
+                                    this.battleScreen.visible = true;
+                                    this.battleScreen.activate();
+                                    gsap_1.default.to(this.splashScreen, {
+                                        alpha: 0,
+                                        duration: 0.4
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
                 break;
         }
-        this.screen = screen;
+        this.activeScreen = screen;
+        this.resizeHandler();
     }
 }
 exports.World = World;
@@ -913,6 +1169,7 @@ World.SCREENS = WorldScreen;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+__webpack_require__(/*! ./styles.css */ "./src/styles.css");
 const World_1 = __webpack_require__(/*! ./World */ "./src/World.ts");
 const GameLoader_1 = __webpack_require__(/*! ./GameLoader */ "./src/GameLoader.ts");
 async function run() {
@@ -942,13 +1199,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logPointerEvent = exports.logMoveInterface = exports.logBoundary = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logPokeLayout = void 0;
+exports.logPointerEvent = exports.logMoveInterface = exports.logBoundary = exports.logRectCollision = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logBattleLayout = exports.logWorld = void 0;
 const debug_1 = __importDefault(__webpack_require__(/*! debug */ "./node_modules/debug/src/browser.js"));
-exports.logPokeLayout = (0, debug_1.default)('poke-layout');
+exports.logWorld = (0, debug_1.default)('poke-world');
+exports.logBattleLayout = (0, debug_1.default)('poke-battle-layout');
 exports.logKeydown = (0, debug_1.default)('poke-keydown');
 exports.logKeyup = (0, debug_1.default)('poke-keyup');
 exports.logPlayerImpulse = (0, debug_1.default)('poke-player-impulse');
 exports.logPlayerCollision = (0, debug_1.default)('poke-player-collision');
+exports.logRectCollision = (0, debug_1.default)('poke-rect-collision');
 exports.logBoundary = (0, debug_1.default)('poke-boundary');
 exports.logMoveInterface = (0, debug_1.default)('poke-move-interface');
 exports.logPointerEvent = (0, debug_1.default)('poke-pointer-event');
@@ -967,7 +1226,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.rectangularCollision = void 0;
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
 function rectangularCollision({ rect1, rect2 }) {
-    (0, logger_1.logPlayerCollision)(`r1x=${rect1.x} r1y=${rect1.y} r1w=${rect1.width} r1h=${rect1.height} <> r2x=${rect2.x} r2y=${rect2.y} r2w=${rect2.width} r2h=${rect2.height}`);
+    (0, logger_1.logRectCollision)(`r1x=${rect1.x} r1y=${rect1.y} r1w=${rect1.width} r1h=${rect1.height} <> r2x=${rect2.x} r2y=${rect2.y} r2w=${rect2.width} r2h=${rect2.height}`);
     return (rect1.x + rect1.width >= rect2.x &&
         rect1.x <= rect2.x + rect2.width &&
         rect1.y <= rect2.y + rect2.height &&
@@ -1043,6 +1302,18 @@ exports.rectangularCollision = rectangularCollision;
 /******/ 		};
 /******/ 	})();
 /******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/global */
 /******/ 	(() => {
 /******/ 		__webpack_require__.g = (function() {
@@ -1058,6 +1329,17 @@ exports.rectangularCollision = rectangularCollision;
 /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
 /******/ 	(() => {
 /******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/node module decorator */
