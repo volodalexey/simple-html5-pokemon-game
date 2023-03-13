@@ -14,6 +14,140 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./src/AttacksBox.ts":
+/*!***************************!*\
+  !*** ./src/AttacksBox.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AttacksBox = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const attacks_1 = __webpack_require__(/*! ./attacks */ "./src/attacks.ts");
+class AttackButton extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.buttonIdleColor = 0xffffff;
+        this.buttonHoverColor = 0xdddddd;
+        this.textColor = 0x000000;
+        this.textSize = 16;
+        this.interactive = true;
+        this.attackType = options.attackType;
+        this.cursor = 'pointer';
+        this.btnWidth = options.btnWidth;
+        this.btnHeight = options.btnHeight;
+        this.onHover = options.onHover;
+        this.onClick = options.onClick;
+        this.setup(options);
+        this.draw(this.buttonIdleColor);
+    }
+    setup({ attackType, btnWidth, btnHeight }) {
+        const background = new pixi_js_1.Graphics();
+        this.addChild(background);
+        this.background = background;
+        const text = new pixi_js_1.Text(attacks_1.ATTACKS[this.attackType].name, {
+            fontFamily: 'Press Start 2P',
+            fontSize: this.textSize,
+            fill: this.textColor,
+            align: 'center'
+        });
+        text.anchor.set(0.5, 0.5);
+        text.position.set(btnWidth / 2, btnHeight / 2);
+        this.addChild(text);
+        this.text = text;
+        this.on('pointerdown', (e) => {
+            if (e.pointerType === 'touch') {
+                this.draw(this.buttonHoverColor);
+                this.onHover(attackType);
+            }
+            this.onClick(this);
+        });
+        this.on('pointerenter', (e) => {
+            if (e.pointerType === 'mouse') {
+                this.draw(this.buttonHoverColor);
+                this.onHover(attackType);
+            }
+        });
+        this.on('pointerleave', (e) => {
+            if (e.pointerType === 'mouse') {
+                this.draw(this.buttonIdleColor);
+            }
+        });
+        this.on('pointerup', (e) => {
+            if (e.pointerType === 'touch') {
+                this.draw(this.buttonIdleColor);
+            }
+        });
+    }
+    draw(fillColor) {
+        this.background.beginFill(fillColor);
+        this.background.drawRect(0, 0, this.btnWidth, this.btnHeight);
+        this.background.endFill();
+    }
+}
+class AttacksBox extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.boxBorderThick = 4;
+        this.boxBorderColor = 0x000000;
+        this.boxHeight = 140;
+        this.boxColor = 0xffffff;
+        this.attackTextSize = 16;
+        this.handleAttackBtnClick = (attackBtn) => {
+            this.onAttackClick(attackBtn.attackType);
+        };
+        this.attacksWidth = Math.round(options.boxWidth * 0.66);
+        this.onAttackClick = options.onAttackClick;
+        this.setup(options);
+        this.draw(options);
+    }
+    setup(options) {
+        this.box = new pixi_js_1.Graphics();
+        this.addChild(this.box);
+        const attackWidth = this.attacksWidth / options.attackTypes.length;
+        options.attackTypes.forEach((attackType, idx) => {
+            const attackButton = new AttackButton({
+                attackType,
+                btnWidth: attackWidth,
+                btnHeight: this.boxHeight - this.boxBorderThick,
+                onHover: (attackType) => {
+                    this.attackText.text = attacks_1.ATTACKS[attackType].description;
+                    this.attackText.style.fill = attacks_1.ATTACKS[attackType].color;
+                },
+                onClick: this.handleAttackBtnClick
+            });
+            this.addChild(attackButton);
+            attackButton.x = idx * attackWidth;
+            attackButton.y = this.boxBorderThick;
+        });
+        const attackText = new pixi_js_1.Text('', {
+            fontFamily: 'Press Start 2P',
+            fontSize: this.attackTextSize,
+            fill: 0xffffff,
+            align: 'center'
+        });
+        attackText.anchor.set(0.5, 0.5);
+        attackText.position.set(this.attacksWidth + (options.boxWidth - this.attacksWidth) / 2, this.boxBorderThick + (this.boxHeight - this.boxBorderThick) / 2);
+        this.addChild(attackText);
+        this.attackText = attackText;
+    }
+    draw({ boxWidth }) {
+        const { box, boxBorderColor, boxHeight, boxColor, boxBorderThick, attacksWidth } = this;
+        box.beginFill(boxBorderColor);
+        box.drawRect(0, 0, boxWidth, boxHeight);
+        box.endFill();
+        box.beginFill(boxColor);
+        box.drawRect(0, boxBorderThick, attacksWidth, boxHeight - boxBorderThick);
+        box.drawRect(attacksWidth + boxBorderThick, boxBorderThick, boxWidth - attacksWidth - boxBorderThick, boxHeight - boxBorderThick);
+        box.endFill();
+    }
+}
+exports.AttacksBox = AttacksBox;
+
+
+/***/ }),
+
 /***/ "./src/BattleScreen.ts":
 /*!*****************************!*\
   !*** ./src/BattleScreen.ts ***!
@@ -24,43 +158,126 @@ __webpack_require__.r(__webpack_exports__);
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BattleScreen = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const attacks_1 = __webpack_require__(/*! ./attacks */ "./src/attacks.ts");
+const AttacksBox_1 = __webpack_require__(/*! ./AttacksBox */ "./src/AttacksBox.ts");
 const CharacterBox_1 = __webpack_require__(/*! ./CharacterBox */ "./src/CharacterBox.ts");
+const DialogueBox_1 = __webpack_require__(/*! ./DialogueBox */ "./src/DialogueBox.ts");
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
+const Monster_1 = __webpack_require__(/*! ./Monster */ "./src/Monster.ts");
 class BattleScreen extends pixi_js_1.Container {
     constructor(options) {
         super();
         this.isActive = false;
-        this.animationSpeed = 0.05;
+        this.queue = [];
+        this.handleAttackClick = (attackType) => {
+            const { queue, draggle, emby, draggleBox, embyBox } = this;
+            (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) attack`);
+            if (queue.length === 0) {
+                emby.attack({
+                    attackType,
+                    recipient: draggle,
+                    recipientBox: draggleBox,
+                    container: this
+                });
+                this.showDialogue(`${emby.name} used ${attacks_1.ATTACKS[attackType].name}`);
+                if (draggle.health <= 0) {
+                    (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) draggle fainted`);
+                    queue.push(() => {
+                        this.showDialogue(`${draggle.name} fainted!`);
+                        draggle.faint();
+                    });
+                    (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) onBattleEnd`);
+                    queue.push(() => {
+                        this.onBattleEnd();
+                    });
+                }
+                else {
+                    const maxAttackIdx = draggle.attackTypes.length;
+                    const randomAttackType = draggle.attackTypes[Math.floor(Math.random() * maxAttackIdx)];
+                    (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) draggle attack`);
+                    queue.push(() => {
+                        draggle.attack({
+                            attackType: randomAttackType,
+                            recipient: emby,
+                            recipientBox: embyBox,
+                            container: this
+                        });
+                        if (emby.health <= 0) {
+                            (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) emby fainted`);
+                            queue.push(() => {
+                                this.showDialogue(`${emby.name} fainted!`);
+                                emby.faint();
+                            });
+                            (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) onBattleEnd`);
+                            queue.push(() => {
+                                this.onBattleEnd();
+                            });
+                        }
+                    });
+                }
+            }
+        };
+        this.hideDialogue = () => {
+            this.dialogueBox.visible = false;
+            this.attacksBox.visible = true;
+            if (this.queue.length > 0) {
+                (0, logger_1.logBattleQueue)('before', this.queue.length);
+                const task = this.queue.shift();
+                if (typeof task === 'function') {
+                    (0, logger_1.logBattleQueue)('task()');
+                    task();
+                }
+            }
+            (0, logger_1.logBattleQueue)('after', this.queue.length);
+        };
+        this.onBattleEnd = options.onBattleEnd;
         this.setup(options);
     }
     setup(options) {
         this.setupBackground(options);
-        this.setupVersus(options);
+        this.setupMonsters(options);
         this.setupCharacterBoxes(options);
+        this.setupAttacksBar();
+        this.setupDialogueBox();
+        this.hideDialogue();
     }
     setupBackground({ sprites: { background } }) {
         const bgSpr = new pixi_js_1.Sprite(background);
         this.addChild(bgSpr);
         this.background = bgSpr;
     }
-    setupVersus({ sprites: { draggle, emby } }) {
-        const drlSpr = new pixi_js_1.AnimatedSprite(draggle);
-        drlSpr.animationSpeed = this.animationSpeed;
-        this.addChild(drlSpr);
-        this.draggle = drlSpr;
-        this.draggle.x = 800;
-        this.draggle.y = 95;
-        const embSpr = new pixi_js_1.AnimatedSprite(emby);
-        embSpr.animationSpeed = this.animationSpeed;
-        this.addChild(embSpr);
-        this.emby = embSpr;
-        this.emby.x = 300;
-        this.emby.y = 330;
+    setupMonsters({ sprites: { draggle, emby, fireball } }) {
+        const draggleMonster = new Monster_1.Monster({
+            x: 800,
+            y: 95,
+            name: 'Draggle',
+            animationTexture: draggle,
+            attackTypes: [attacks_1.AttackType.Tackle, attacks_1.AttackType.Fireball],
+            isEnemy: true,
+            fireballTexture: fireball
+        });
+        this.addChild(draggleMonster);
+        this.draggle = draggleMonster;
+        const embyMonster = new Monster_1.Monster({
+            x: 300,
+            y: 330,
+            name: 'Emby',
+            animationTexture: emby,
+            attackTypes: [attacks_1.AttackType.Tackle, attacks_1.AttackType.Fireball],
+            isEnemy: false,
+            fireballTexture: fireball
+        });
+        this.addChild(embyMonster);
+        this.emby = embyMonster;
     }
     activate() {
         this.isActive = true;
         this.draggle.play();
         this.emby.play();
+        this.draggle.initialize();
+        this.draggleBox.updateHealth(this.draggle.health);
+        this.emby.initialize();
+        this.embyBox.updateHealth(this.emby.health);
     }
     deactivate() {
         this.isActive = false;
@@ -101,19 +318,41 @@ class BattleScreen extends pixi_js_1.Container {
     }
     setupCharacterBoxes(options) {
         const draggleBox = new CharacterBox_1.CharacterBox({
-            name: 'Draggle'
+            text: this.draggle.name
         });
         draggleBox.x = 50;
         draggleBox.y = 50;
         this.addChild(draggleBox);
         this.draggleBox = draggleBox;
         const embyBox = new CharacterBox_1.CharacterBox({
-            name: 'Emby'
+            text: this.emby.name
         });
         embyBox.x = this.background.width - (embyBox.width + 50);
         embyBox.y = 330;
         this.addChild(embyBox);
         this.embyBox = embyBox;
+    }
+    setupAttacksBar() {
+        this.attacksBox = new AttacksBox_1.AttacksBox({
+            attackTypes: this.emby.attackTypes,
+            boxWidth: this.background.width,
+            onAttackClick: this.handleAttackClick
+        });
+        this.addChild(this.attacksBox);
+        this.attacksBox.y = this.background.height - this.attacksBox.height;
+    }
+    setupDialogueBox() {
+        this.dialogueBox = new DialogueBox_1.DialogueBox({
+            boxWidth: this.background.width,
+            onClick: this.hideDialogue
+        });
+        this.dialogueBox.y = this.background.height - this.dialogueBox.height;
+        this.addChild(this.dialogueBox);
+    }
+    showDialogue(text) {
+        this.dialogueBox.visible = true;
+        this.dialogueBox.text.text = text;
+        this.attacksBox.visible = false;
     }
 }
 exports.BattleScreen = BattleScreen;
@@ -164,39 +403,57 @@ exports.Boundary = Boundary;
 /*!*****************************!*\
   !*** ./src/CharacterBox.ts ***!
   \*****************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CharacterBox = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const gsap_1 = __importDefault(__webpack_require__(/*! gsap */ "./node_modules/gsap/index.js"));
 class CharacterBox extends pixi_js_1.Container {
     constructor(options) {
         super();
+        this.lifeEmptyColor = 0xcccccc;
+        this.lifeColor = 0x008000;
+        this.lifeBarHeight = 5;
+        this.textColor = 0x000000;
+        this.textSize = 16;
         this.boxWidth = 250;
         this.boxHeight = 60;
         this.boxColor = 0xffffff;
         this.boxBorderThick = 4;
         this.boxBorderColor = 0x000000;
-        this.name = options.name;
-        this.setup();
+        this.padding = 16;
+        this.lifeBarWidth = this.boxWidth - this.padding * 2;
+        this.setup(options);
         this.draw();
     }
-    setup() {
+    setup(options) {
         this.box = new pixi_js_1.Graphics();
         this.addChild(this.box);
-        this.lifeBar = new pixi_js_1.Graphics();
-        this.addChild(this.lifeBar);
-        this.text = new pixi_js_1.Text(this.name, {
+        const text = new pixi_js_1.Text(options.text, {
             fontFamily: 'Press Start 2P',
-            fontSize: 24,
-            fill: 0xff1010,
-            align: 'center'
+            fontSize: this.textSize,
+            fill: this.textColor
         });
-        this.addChild(this.text);
+        text.x = this.padding;
+        text.y = this.padding;
+        this.addChild(text);
+        this.text = text;
+        const barsContainer = new pixi_js_1.Container();
+        this.lifeBarEmpty = new pixi_js_1.Graphics();
+        barsContainer.addChild(this.lifeBarEmpty);
+        this.lifeBarFull = new pixi_js_1.Graphics();
+        barsContainer.addChild(this.lifeBarFull);
+        barsContainer.x = this.padding;
+        barsContainer.y = this.boxHeight - this.padding - this.lifeBarHeight;
+        this.addChild(barsContainer);
     }
     draw() {
-        const { box, boxBorderColor, boxWidth, boxHeight, boxColor, boxBorderThick } = this;
+        const { box, boxBorderColor, boxWidth, boxHeight, boxColor, boxBorderThick, lifeBarEmpty, lifeEmptyColor, lifeBarHeight, lifeBarFull, lifeColor, lifeBarWidth } = this;
         box.clear();
         box.beginFill(boxBorderColor);
         box.drawRect(0, 0, boxWidth, boxHeight);
@@ -204,9 +461,82 @@ class CharacterBox extends pixi_js_1.Container {
         box.beginFill(boxColor);
         box.drawRect(0 + boxBorderThick, 0 + boxBorderThick, boxWidth - boxBorderThick * 2, boxHeight - boxBorderThick * 2);
         box.endFill();
+        lifeBarEmpty.beginFill(lifeEmptyColor);
+        lifeBarEmpty.drawRect(0, 0, lifeBarWidth, lifeBarHeight);
+        lifeBarFull.beginFill(lifeColor);
+        lifeBarFull.drawRect(0, 0, lifeBarWidth, lifeBarHeight);
+    }
+    updateHealth(health) {
+        if (health <= 0) {
+            health = 0;
+        }
+        else if (health >= 100) {
+            health = 100;
+        }
+        gsap_1.default.to(this.lifeBarFull, {
+            width: this.lifeBarWidth * health / 100
+        });
     }
 }
 exports.CharacterBox = CharacterBox;
+
+
+/***/ }),
+
+/***/ "./src/DialogueBox.ts":
+/*!****************************!*\
+  !*** ./src/DialogueBox.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DialogueBox = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+class DialogueBox extends pixi_js_1.Container {
+    constructor(options) {
+        super();
+        this.boxBorderThick = 4;
+        this.boxBorderColor = 0x000000;
+        this.boxHeight = 140;
+        this.boxColor = 0xffffff;
+        this.textColor = 0x000000;
+        this.textSize = 16;
+        this.padding = 12;
+        this.onClick = options.onClick;
+        this.setup();
+        this.draw(options);
+        this.interactive = true;
+        this.cursor = 'pointer';
+        this.on('pointerdown', () => {
+            this.onClick();
+        });
+    }
+    setup() {
+        const box = new pixi_js_1.Graphics();
+        this.addChild(box);
+        this.box = box;
+        const text = new pixi_js_1.Text('Emby used Fireball', {
+            fontFamily: 'Press Start 2P',
+            fontSize: this.textSize,
+            fill: this.textColor
+        });
+        text.x = this.padding;
+        text.y = this.padding + this.boxBorderThick;
+        this.addChild(text);
+        this.text = text;
+    }
+    draw({ boxWidth }) {
+        const { box, boxBorderColor, boxHeight, boxColor, boxBorderThick } = this;
+        box.beginFill(boxBorderColor);
+        box.drawRect(0, 0, boxWidth, boxHeight);
+        box.endFill();
+        box.beginFill(boxColor);
+        box.drawRect(0, boxBorderThick, boxWidth, boxHeight - boxBorderThick);
+        box.endFill();
+    }
+}
+exports.DialogueBox = DialogueBox;
 
 
 /***/ }),
@@ -532,6 +862,114 @@ class MapScreen extends pixi_js_1.Container {
     }
 }
 exports.MapScreen = MapScreen;
+
+
+/***/ }),
+
+/***/ "./src/Monster.ts":
+/*!************************!*\
+  !*** ./src/Monster.ts ***!
+  \************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Monster = void 0;
+const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const gsap_1 = __importDefault(__webpack_require__(/*! gsap */ "./node_modules/gsap/index.js"));
+const attacks_1 = __webpack_require__(/*! ./attacks */ "./src/attacks.ts");
+class Monster extends pixi_js_1.AnimatedSprite {
+    constructor(options) {
+        super(options.animationTexture);
+        this.animSpeed = 0.03;
+        this.health = 100;
+        this.animationSpeed = this.animSpeed;
+        this.posX = options.x;
+        this.posY = options.y;
+        this.name = options.name;
+        this.attackTypes = options.attackTypes;
+        this.isEnemy = options.isEnemy;
+        this.fireballTexture = options.fireballTexture;
+    }
+    initialize() {
+        this.health = 100;
+        this.alpha = 1;
+        this.x = this.posX;
+        this.y = this.posY;
+    }
+    faint() {
+        this.stop();
+        gsap_1.default.to(this, {
+            alpha: 0,
+            y: this.posY + 20
+        });
+    }
+    attack({ attackType, recipient, recipientBox, container }) {
+        recipient.health -= attacks_1.ATTACKS[attackType].damage;
+        switch (attackType) {
+            case attacks_1.AttackType.Fireball:
+                {
+                    const fireball = new pixi_js_1.AnimatedSprite(this.fireballTexture);
+                    fireball.x = this.x;
+                    fireball.y = this.y;
+                    let rotation = 1;
+                    if (this.isEnemy)
+                        rotation = -2.2;
+                    fireball.anchor.set(0.5, 0.5);
+                    fireball.rotation = rotation;
+                    container.addChild(fireball);
+                    gsap_1.default.to(fireball.position, {
+                        x: recipient.position.x + recipient.width / 2,
+                        y: recipient.position.y + recipient.height / 2,
+                        onComplete: () => {
+                            recipientBox.updateHealth(recipient.health);
+                            gsap_1.default.to(recipient, {
+                                x: recipient.posX + 10,
+                                alpha: 0,
+                                yoyo: true,
+                                repeat: 5,
+                                duration: 0.08
+                            });
+                            container.removeChild(fireball);
+                        }
+                    });
+                }
+                break;
+            case attacks_1.AttackType.Tackle:
+                {
+                    const tl = gsap_1.default.timeline();
+                    let movementDistance = 20;
+                    if (this.isEnemy)
+                        movementDistance = -20;
+                    tl.to(this, {
+                        x: this.posX - movementDistance
+                    })
+                        .to(this, {
+                        x: this.position.x + movementDistance * 2,
+                        duration: 0.1,
+                        onComplete: () => {
+                            recipientBox.updateHealth(recipient.health);
+                            gsap_1.default.to(recipient, {
+                                x: recipient.x + 10,
+                                alpha: 0,
+                                yoyo: true,
+                                repeat: 5,
+                                duration: 0.08
+                            });
+                        }
+                    })
+                        .to(this.position, {
+                        x: this.position.x
+                    });
+                }
+                break;
+        }
+    }
+}
+exports.Monster = Monster;
 
 
 /***/ }),
@@ -1018,6 +1456,9 @@ class World {
         this.handleBattleStart = () => {
             this.setScreen(WorldScreen.battle);
         };
+        this.handleBattleEnd = () => {
+            this.setScreen(WorldScreen.map);
+        };
         this.app = app;
         this.gameLoader = gameLoader;
         this.setup();
@@ -1072,8 +1513,10 @@ class World {
             sprites: {
                 draggle: animations['Draggle-Idle'],
                 emby: animations['Emby-Idle'],
-                background: battleBackgroundTexture
-            }
+                background: battleBackgroundTexture,
+                fireball: animations.Fireball
+            },
+            onBattleEnd: this.handleBattleEnd
         });
         this.splashScreen = new SplashScreen_1.SplashScreen({
             viewWidth: width,
@@ -1188,6 +1631,40 @@ run().catch(console.error);
 
 /***/ }),
 
+/***/ "./src/attacks.ts":
+/*!************************!*\
+  !*** ./src/attacks.ts ***!
+  \************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ATTACKS = exports.AttackType = void 0;
+var AttackType;
+(function (AttackType) {
+    AttackType["Tackle"] = "Tackle";
+    AttackType["Fireball"] = "Fireball";
+})(AttackType = exports.AttackType || (exports.AttackType = {}));
+exports.ATTACKS = {
+    [AttackType.Tackle]: {
+        name: 'Tackle',
+        damage: 10,
+        type: AttackType.Tackle,
+        description: 'Normal',
+        color: 0x000000
+    },
+    [AttackType.Fireball]: {
+        name: 'Fireball',
+        damage: 25,
+        type: AttackType.Fireball,
+        description: 'Fire',
+        color: 0xff0000
+    }
+};
+
+
+/***/ }),
+
 /***/ "./src/logger.ts":
 /*!***********************!*\
   !*** ./src/logger.ts ***!
@@ -1199,7 +1676,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.logPointerEvent = exports.logMoveInterface = exports.logBoundary = exports.logRectCollision = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logBattleLayout = exports.logWorld = void 0;
+exports.logBattleQueue = exports.logPointerEvent = exports.logMoveInterface = exports.logBoundary = exports.logRectCollision = exports.logPlayerCollision = exports.logPlayerImpulse = exports.logKeyup = exports.logKeydown = exports.logBattleLayout = exports.logWorld = void 0;
 const debug_1 = __importDefault(__webpack_require__(/*! debug */ "./node_modules/debug/src/browser.js"));
 exports.logWorld = (0, debug_1.default)('poke-world');
 exports.logBattleLayout = (0, debug_1.default)('poke-battle-layout');
@@ -1211,6 +1688,7 @@ exports.logRectCollision = (0, debug_1.default)('poke-rect-collision');
 exports.logBoundary = (0, debug_1.default)('poke-boundary');
 exports.logMoveInterface = (0, debug_1.default)('poke-move-interface');
 exports.logPointerEvent = (0, debug_1.default)('poke-pointer-event');
+exports.logBattleQueue = (0, debug_1.default)('poke-battle-queue');
 
 
 /***/ }),
