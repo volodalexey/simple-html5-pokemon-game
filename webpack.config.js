@@ -2,6 +2,7 @@ const path = require('path')
 
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 module.exports = {
   entry: './src/app.ts',
@@ -18,6 +19,18 @@ module.exports = {
         test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.css$/i,
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+        exclude: /node_modules/
+      },
+      {
+        test: /\.woff2$/,
+        type: 'asset/resource',
+        generator: {
+          filename: './assets/fonts/[name][ext]'
+        }
       }
     ]
   },
@@ -43,6 +56,7 @@ module.exports = {
     clean: true
   },
   plugins: [
+    new MiniCssExtractPlugin(),
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: './src/index.html',

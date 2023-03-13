@@ -1,8 +1,14 @@
-import { AnimatedSprite, Container, type Texture, Sprite } from 'pixi.js'
+import { Container, type Texture, Sprite } from 'pixi.js'
+import { AttacksBox } from './AttacksBox'
+import { CharacterBox } from './CharacterBox'
 import { type IScreen } from './classes'
+import { DialogueBox } from './DialogueBox'
 import { logBattleLayout } from './logger'
+import { Monster } from './Monster'
 
 interface IBattleScreenOptions {
+  viewWidth: number
+  viewHeight: number
   sprites: {
     background: Texture
     draggle: Texture[]
@@ -12,10 +18,13 @@ interface IBattleScreenOptions {
 
 export class BattleScreen extends Container implements IScreen {
   public isActive = false
-  public animationSpeed = 0.05
-  public draggle!: AnimatedSprite
-  public emby!: AnimatedSprite
+  public draggle!: Monster
+  public emby!: Monster
+  public draggleBox!: CharacterBox
+  public embyBox!: CharacterBox
   public background!: Sprite
+  public attacksBox!: AttacksBox
+  public dialogueBox!: DialogueBox
 
   constructor (options: IBattleScreenOptions) {
     super()
@@ -24,7 +33,16 @@ export class BattleScreen extends Container implements IScreen {
 
   setup (options: IBattleScreenOptions): void {
     this.setupBackground(options)
-    this.setupVersus(options)
+    this.setupMonsters(options)
+    this.setupCharacterBoxes(options)
+    this.setupAttacksBar()
+    this.setupDialogueBox()
+
+    this.hideDialogue()
+
+    setTimeout(() => {
+      this.showDialogue('FFF')
+    }, 2000)
   }
 
   setupBackground ({ sprites: { background } }: IBattleScreenOptions): void {
@@ -33,26 +51,38 @@ export class BattleScreen extends Container implements IScreen {
     this.background = bgSpr
   }
 
-  setupVersus ({ sprites: { draggle, emby } }: IBattleScreenOptions): void {
-    const drlSpr = new AnimatedSprite(draggle)
-    drlSpr.animationSpeed = this.animationSpeed
-    this.addChild(drlSpr)
-    this.draggle = drlSpr
-    this.draggle.x = 800
-    this.draggle.y = 95
+  setupMonsters ({ sprites: { draggle, emby } }: IBattleScreenOptions): void {
+    const draggleMonster = new Monster({
+      x: 800,
+      y: 95,
+      name: 'Draggle',
+      animationTexture: draggle,
+      attacks: [Monster.ATTACKS.Tackle, Monster.ATTACKS.Fireball],
+      isEnemy: true
+    })
+    this.addChild(draggleMonster)
+    this.draggle = draggleMonster
 
-    const embSpr = new AnimatedSprite(emby)
-    embSpr.animationSpeed = this.animationSpeed
-    this.addChild(embSpr)
-    this.emby = embSpr
-    this.emby.x = 300
-    this.emby.y = 330
+    const embyMonster = new Monster({
+      x: 300,
+      y: 330,
+      name: 'Emby',
+      animationTexture: emby,
+      attacks: [Monster.ATTACKS.Tackle, Monster.ATTACKS.Fireball],
+      isEnemy: false
+    })
+    this.addChild(embyMonster)
+    this.emby = embyMonster
   }
 
   activate (): void {
     this.isActive = true
     this.draggle.play()
     this.emby.play()
+    this.draggle.initialize()
+    this.draggleBox.updateHealth(this.draggle.health)
+    this.emby.initialize()
+    this.embyBox.updateHealth(this.emby.health)
   }
 
   deactivate (): void {
@@ -92,5 +122,56 @@ export class BattleScreen extends Container implements IScreen {
     this.y = y
     this.height = occupiedHeight
     logBattleLayout(`x=${x} y=${y} w=${this.width} h=${this.height}`)
+  }
+
+  setupCharacterBoxes (options: IBattleScreenOptions): void {
+    const draggleBox = new CharacterBox({
+      text: this.draggle.name
+    })
+    draggleBox.x = 50
+    draggleBox.y = 50
+    this.addChild(draggleBox)
+    this.draggleBox = draggleBox
+
+    const embyBox = new CharacterBox({
+      text: this.emby.name
+    })
+    embyBox.x = this.background.width - (embyBox.width + 50)
+    embyBox.y = 330
+    this.addChild(embyBox)
+    this.embyBox = embyBox
+  }
+
+  setupAttacksBar (): void {
+    this.attacksBox = new AttacksBox({
+      attacks: this.emby.attacks,
+      boxWidth: this.background.width,
+      onAttackClick: this.handleAttackClick
+    })
+    this.addChild(this.attacksBox)
+    this.attacksBox.y = this.background.height - this.attacksBox.height
+  }
+
+  handleAttackClick = (attack: string): void => {
+    console.log(attack)
+  }
+
+  setupDialogueBox (): void {
+    this.dialogueBox = new DialogueBox({
+      boxWidth: this.background.width,
+      onClick: this.hideDialogue
+    })
+    this.dialogueBox.y = this.background.height - this.dialogueBox.height
+    this.addChild(this.dialogueBox)
+  }
+
+  showDialogue (text: string): void {
+    this.dialogueBox.visible = true
+    this.attacksBox.visible = false
+  }
+
+  hideDialogue = (): void => {
+    this.dialogueBox.visible = false
+    this.attacksBox.visible = true
   }
 }

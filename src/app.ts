@@ -1,5 +1,6 @@
 import { Application } from 'pixi.js'
 
+import './styles.css'
 import { World } from './World'
 import { GameLoader } from './GameLoader'
 

@@ -93,6 +93,8 @@ export class World {
       onBattleStart: this.handleBattleStart
     })
     this.battleScreen = new BattleScreen({
+      viewWidth: width,
+      viewHeight: height,
       sprites: {
         draggle: animations['Draggle-Idle'],
         emby: animations['Emby-Idle'],
