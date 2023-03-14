@@ -622,21 +622,21 @@ class MapScreen extends pixi_js_1.Container {
         this.overlappingBattleChance = 0.01;
         this.handleKeydown = (e) => {
             const { player } = this;
-            (0, logger_1.logKeydown)(e.key);
-            switch (e.key) {
-                case 'w':
+            (0, logger_1.logKeydown)(`${e.code} ${e.key}`);
+            switch (e.code) {
+                case 'KeyW':
                 case 'ArrowUp':
                     player.addUpImpulse();
                     break;
-                case 'a':
+                case 'KeyA':
                 case 'ArrowLeft':
                     player.addLeftImpulse();
                     break;
-                case 's':
+                case 'KeyS':
                 case 'ArrowDown':
                     player.addDownImpulse();
                     break;
-                case 'd':
+                case 'KeyD':
                 case 'ArrowRight':
                     player.addRightImpulse();
                     break;
@@ -644,21 +644,21 @@ class MapScreen extends pixi_js_1.Container {
         };
         this.handleKeyup = (e) => {
             const { player } = this;
-            (0, logger_1.logKeyup)(e.key);
-            switch (e.key) {
-                case 'w':
+            (0, logger_1.logKeyup)(`${e.code} ${e.key}`);
+            switch (e.code) {
+                case 'KeyW':
                 case 'ArrowUp':
                     player.subUpImpulse();
                     break;
-                case 'a':
+                case 'KeyA':
                 case 'ArrowLeft':
                     player.subLeftImpulse();
                     break;
-                case 's':
+                case 'KeyS':
                 case 'ArrowDown':
                     player.subDownImpulse();
                     break;
-                case 'd':
+                case 'KeyD':
                 case 'ArrowRight':
                     player.subRightImpulse();
                     break;
@@ -807,7 +807,7 @@ class MapScreen extends pixi_js_1.Container {
         }
         if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
             if (!this.playerMoveInitialized) {
-                if (audio_1.AUDIO.Map.playing == null) {
+                if (!audio_1.AUDIO.Map.playing()) {
                     audio_1.AUDIO.Map.play();
                 }
             }
