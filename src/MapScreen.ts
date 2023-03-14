@@ -191,7 +191,7 @@ export class MapScreen extends Container implements IScreen {
 
     if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
       if (!this.playerMoveInitialized) {
-        if (AUDIO.Map.playing == null) {
+        if (!AUDIO.Map.playing()) {
           AUDIO.Map.play()
         }
       }
@@ -252,21 +252,21 @@ export class MapScreen extends Container implements IScreen {
 
   handleKeydown = (e: KeyboardEvent): void => {
     const { player } = this
-    logKeydown(e.key)
-    switch (e.key) {
-      case 'w':
+    logKeydown(`${e.code} ${e.key}`)
+    switch (e.code) {
+      case 'KeyW':
       case 'ArrowUp':
         player.addUpImpulse()
         break
-      case 'a':
+      case 'KeyA':
       case 'ArrowLeft':
         player.addLeftImpulse()
         break
-      case 's':
+      case 'KeyS':
       case 'ArrowDown':
         player.addDownImpulse()
         break
-      case 'd':
+      case 'KeyD':
       case 'ArrowRight':
         player.addRightImpulse()
         break
@@ -275,21 +275,21 @@ export class MapScreen extends Container implements IScreen {
 
   handleKeyup = (e: KeyboardEvent): void => {
     const { player } = this
-    logKeyup(e.key)
-    switch (e.key) {
-      case 'w':
+    logKeyup(`${e.code} ${e.key}`)
+    switch (e.code) {
+      case 'KeyW':
       case 'ArrowUp':
         player.subUpImpulse()
         break
-      case 'a':
+      case 'KeyA':
       case 'ArrowLeft':
         player.subLeftImpulse()
         break
-      case 's':
+      case 'KeyS':
       case 'ArrowDown':
         player.subDownImpulse()
         break
-      case 'd':
+      case 'KeyD':
       case 'ArrowRight':
         player.subRightImpulse()
         break
