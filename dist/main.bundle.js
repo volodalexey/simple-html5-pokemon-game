@@ -203,6 +203,7 @@ class BattleScreen extends pixi_js_1.Container {
                             recipientBox: embyBox,
                             container: this
                         });
+                        this.showDialogue(`${draggle.name} used ${attacks_1.ATTACKS[randomAttackType].name}`);
                         if (emby.health <= 0) {
                             (0, logger_1.logBattleQueue)(`queue.push (${queue.length}) emby fainted`);
                             queue.push(() => {
@@ -619,7 +620,7 @@ class MapScreen extends pixi_js_1.Container {
         this.boundaries = [];
         this.battleZones = [];
         this.overlappingBattleTrigger = 0.5;
-        this.overlappingBattleChance = 0.01;
+        this.overlappingBattleChance = 0.05;
         this.handleKeydown = (e) => {
             const { player } = this;
             (0, logger_1.logKeydown)(`${e.code} ${e.key}`);
