@@ -6,6 +6,7 @@ import { MapScreen } from './MapScreen'
 import { BattleScreen } from './BattleScreen'
 import { SplashScreen } from './SplashScreen'
 import { logWorld } from './logger'
+import { AUDIO } from './audio'
 
 enum WorldScreen {
   map,
@@ -32,7 +33,7 @@ export class World {
     this.gameLoader = gameLoader
     this.setup()
 
-    this.setScreen(WorldScreen.battle, true)
+    this.setScreen(WorldScreen.map, true)
 
     this.resizeHandler()
 
@@ -168,6 +169,7 @@ export class World {
         }
         break
       case WorldScreen.battle:
+        AUDIO.initBattle.play()
         this.mapScreen.deactivate()
         if (force) {
           this.mapScreen.visible = false

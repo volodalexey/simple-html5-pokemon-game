@@ -2,6 +2,7 @@ import { AnimatedSprite, type Container, type Texture } from 'pixi.js'
 import gsap from 'gsap'
 import { type CharacterBox } from './CharacterBox'
 import { ATTACKS, AttackType } from './attacks'
+import { AUDIO } from './audio'
 
 export interface IMonsterOptions {
   x: number
@@ -47,6 +48,8 @@ export class Monster extends AnimatedSprite {
       alpha: 0,
       y: this.posY + 20
     })
+    AUDIO.battle.stop()
+    AUDIO.victory.play()
   }
 
   attack ({
@@ -63,6 +66,7 @@ export class Monster extends AnimatedSprite {
     recipient.health -= ATTACKS[attackType].damage
     switch (attackType) {
       case AttackType.Fireball: {
+        AUDIO.initFireball.play()
         const fireball = new AnimatedSprite(this.fireballTexture)
         fireball.x = this.x
         fireball.y = this.y
@@ -77,6 +81,7 @@ export class Monster extends AnimatedSprite {
           x: recipient.position.x + recipient.width / 2,
           y: recipient.position.y + recipient.height / 2,
           onComplete: () => {
+            AUDIO.fireballHit.play()
             recipientBox.updateHealth(recipient.health)
 
             gsap.to(recipient, {
@@ -105,6 +110,7 @@ export class Monster extends AnimatedSprite {
             x: this.position.x + movementDistance * 2,
             duration: 0.1,
             onComplete: () => {
+              AUDIO.tackleHit.play()
               recipientBox.updateHealth(recipient.health)
 
               gsap.to(recipient, {

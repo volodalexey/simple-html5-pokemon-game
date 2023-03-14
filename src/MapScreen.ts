@@ -1,4 +1,5 @@
 import { Container, Sprite, type Texture } from 'pixi.js'
+import { AUDIO } from './audio'
 import { Boundary } from './Boundary'
 import { type IScreen } from './classes'
 import { type TTileLayer } from './GameLoader'
@@ -25,6 +26,7 @@ export class MapScreen extends Container implements IScreen {
   public cellHeight = 48
   public isActive = false
   public tilesPerRow = 70
+  public playerMoveInitialized = false
 
   public player!: Player
   public boundaries: Boundary[] = []
@@ -122,12 +124,14 @@ export class MapScreen extends Container implements IScreen {
   activate (): void {
     this.isActive = true
     this.addEventLesteners()
+    AUDIO.Map.play()
   }
 
   deactivate (): void {
     this.isActive = false
     this.removeEventLesteners()
     this.player.releaseAllImpulse()
+    AUDIO.Map.stop()
   }
 
   handleScreenTick (): void {
@@ -186,6 +190,12 @@ export class MapScreen extends Container implements IScreen {
     }
 
     if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
+      if (!this.playerMoveInitialized) {
+        if (AUDIO.Map.playing == null) {
+          AUDIO.Map.play()
+        }
+      }
+      this.playerMoveInitialized = true
       for (let i = 0; i < this.battleZones.length; i++) {
         const battleZone = this.battleZones[i]
         const overlappingArea =

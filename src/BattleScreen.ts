@@ -1,6 +1,7 @@
 import { Container, type Texture, Sprite } from 'pixi.js'
 import { ATTACKS, AttackType } from './attacks'
 import { AttacksBox } from './AttacksBox'
+import { AUDIO } from './audio'
 import { CharacterBox } from './CharacterBox'
 import { type IScreen } from './classes'
 import { DialogueBox } from './DialogueBox'
@@ -87,12 +88,14 @@ export class BattleScreen extends Container implements IScreen {
     this.draggleBox.updateHealth(this.draggle.health)
     this.emby.initialize()
     this.embyBox.updateHealth(this.emby.health)
+    AUDIO.battle.play()
   }
 
   deactivate (): void {
     this.isActive = false
     this.draggle.stop()
     this.emby.stop()
+    AUDIO.battle.stop()
   }
 
   handleScreenTick (): void {}
@@ -226,7 +229,7 @@ export class BattleScreen extends Container implements IScreen {
     this.dialogueBox.visible = false
     this.attacksBox.visible = true
     if (this.queue.length > 0) {
-      logBattleQueue('before', this.queue.length)
+      logBattleQueue('queue shift', this.queue.length)
       const task = this.queue.shift()
       if (typeof task === 'function') {
         logBattleQueue('task()')
