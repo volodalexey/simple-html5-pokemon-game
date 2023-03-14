@@ -160,6 +160,7 @@ exports.BattleScreen = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
 const attacks_1 = __webpack_require__(/*! ./attacks */ "./src/attacks.ts");
 const AttacksBox_1 = __webpack_require__(/*! ./AttacksBox */ "./src/AttacksBox.ts");
+const audio_1 = __webpack_require__(/*! ./audio */ "./src/audio.ts");
 const CharacterBox_1 = __webpack_require__(/*! ./CharacterBox */ "./src/CharacterBox.ts");
 const DialogueBox_1 = __webpack_require__(/*! ./DialogueBox */ "./src/DialogueBox.ts");
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
@@ -221,7 +222,7 @@ class BattleScreen extends pixi_js_1.Container {
             this.dialogueBox.visible = false;
             this.attacksBox.visible = true;
             if (this.queue.length > 0) {
-                (0, logger_1.logBattleQueue)('before', this.queue.length);
+                (0, logger_1.logBattleQueue)('queue shift', this.queue.length);
                 const task = this.queue.shift();
                 if (typeof task === 'function') {
                     (0, logger_1.logBattleQueue)('task()');
@@ -278,11 +279,13 @@ class BattleScreen extends pixi_js_1.Container {
         this.draggleBox.updateHealth(this.draggle.health);
         this.emby.initialize();
         this.embyBox.updateHealth(this.emby.health);
+        audio_1.AUDIO.battle.play();
     }
     deactivate() {
         this.isActive = false;
         this.draggle.stop();
         this.emby.stop();
+        audio_1.AUDIO.battle.stop();
     }
     handleScreenTick() { }
     handleScreenResize({ viewWidth, viewHeight }) {
@@ -599,6 +602,7 @@ exports.GameLoader = GameLoader;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MapScreen = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
+const audio_1 = __webpack_require__(/*! ./audio */ "./src/audio.ts");
 const Boundary_1 = __webpack_require__(/*! ./Boundary */ "./src/Boundary.ts");
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
 const MoveInterface_1 = __webpack_require__(/*! ./MoveInterface */ "./src/MoveInterface.ts");
@@ -611,6 +615,7 @@ class MapScreen extends pixi_js_1.Container {
         this.cellHeight = 48;
         this.isActive = false;
         this.tilesPerRow = 70;
+        this.playerMoveInitialized = false;
         this.boundaries = [];
         this.battleZones = [];
         this.overlappingBattleTrigger = 0.5;
@@ -744,11 +749,13 @@ class MapScreen extends pixi_js_1.Container {
     activate() {
         this.isActive = true;
         this.addEventLesteners();
+        audio_1.AUDIO.Map.play();
     }
     deactivate() {
         this.isActive = false;
         this.removeEventLesteners();
         this.player.releaseAllImpulse();
+        audio_1.AUDIO.Map.stop();
     }
     handleScreenTick() {
         if (!this.isActive) {
@@ -799,6 +806,12 @@ class MapScreen extends pixi_js_1.Container {
             }
         }
         if (horizontalPlayerImpulse > 0 || verticalPlayerImpulse > 0) {
+            if (!this.playerMoveInitialized) {
+                if (audio_1.AUDIO.Map.playing == null) {
+                    audio_1.AUDIO.Map.play();
+                }
+            }
+            this.playerMoveInitialized = true;
             for (let i = 0; i < this.battleZones.length; i++) {
                 const battleZone = this.battleZones[i];
                 const overlappingArea = (Math.min(this.player.x + this.player.width, battleZone.x + battleZone.width) -
@@ -881,6 +894,7 @@ exports.Monster = void 0;
 const pixi_js_1 = __webpack_require__(/*! pixi.js */ "./node_modules/pixi.js/lib/index.js");
 const gsap_1 = __importDefault(__webpack_require__(/*! gsap */ "./node_modules/gsap/index.js"));
 const attacks_1 = __webpack_require__(/*! ./attacks */ "./src/attacks.ts");
+const audio_1 = __webpack_require__(/*! ./audio */ "./src/audio.ts");
 class Monster extends pixi_js_1.AnimatedSprite {
     constructor(options) {
         super(options.animationTexture);
@@ -906,12 +920,15 @@ class Monster extends pixi_js_1.AnimatedSprite {
             alpha: 0,
             y: this.posY + 20
         });
+        audio_1.AUDIO.battle.stop();
+        audio_1.AUDIO.victory.play();
     }
     attack({ attackType, recipient, recipientBox, container }) {
         recipient.health -= attacks_1.ATTACKS[attackType].damage;
         switch (attackType) {
             case attacks_1.AttackType.Fireball:
                 {
+                    audio_1.AUDIO.initFireball.play();
                     const fireball = new pixi_js_1.AnimatedSprite(this.fireballTexture);
                     fireball.x = this.x;
                     fireball.y = this.y;
@@ -925,6 +942,7 @@ class Monster extends pixi_js_1.AnimatedSprite {
                         x: recipient.position.x + recipient.width / 2,
                         y: recipient.position.y + recipient.height / 2,
                         onComplete: () => {
+                            audio_1.AUDIO.fireballHit.play();
                             recipientBox.updateHealth(recipient.health);
                             gsap_1.default.to(recipient, {
                                 x: recipient.posX + 10,
@@ -951,6 +969,7 @@ class Monster extends pixi_js_1.AnimatedSprite {
                         x: this.position.x + movementDistance * 2,
                         duration: 0.1,
                         onComplete: () => {
+                            audio_1.AUDIO.tackleHit.play();
                             recipientBox.updateHealth(recipient.health);
                             gsap_1.default.to(recipient, {
                                 x: recipient.x + 10,
@@ -1417,6 +1436,7 @@ const MapScreen_1 = __webpack_require__(/*! ./MapScreen */ "./src/MapScreen.ts")
 const BattleScreen_1 = __webpack_require__(/*! ./BattleScreen */ "./src/BattleScreen.ts");
 const SplashScreen_1 = __webpack_require__(/*! ./SplashScreen */ "./src/SplashScreen.ts");
 const logger_1 = __webpack_require__(/*! ./logger */ "./src/logger.ts");
+const audio_1 = __webpack_require__(/*! ./audio */ "./src/audio.ts");
 var WorldScreen;
 (function (WorldScreen) {
     WorldScreen[WorldScreen["map"] = 0] = "map";
@@ -1462,7 +1482,7 @@ class World {
         this.app = app;
         this.gameLoader = gameLoader;
         this.setup();
-        this.setScreen(WorldScreen.battle, true);
+        this.setScreen(WorldScreen.map, true);
         this.resizeHandler();
         if (logger_1.logWorld.enabled) {
             (0, logger_1.logWorld)('window.world initialized!');
@@ -1561,6 +1581,7 @@ class World {
                 }
                 break;
             case WorldScreen.battle:
+                audio_1.AUDIO.initBattle.play();
                 this.mapScreen.deactivate();
                 if (force) {
                     this.mapScreen.visible = false;
@@ -1665,6 +1686,69 @@ exports.ATTACKS = {
 
 /***/ }),
 
+/***/ "./src/audio.ts":
+/*!**********************!*\
+  !*** ./src/audio.ts ***!
+  \**********************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AUDIO = void 0;
+const howler_1 = __webpack_require__(/*! howler */ "./node_modules/howler/dist/howler.js");
+const map_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/map.wav */ "./src/assets/audio/map.wav"));
+const initBattle_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/initBattle.wav */ "./src/assets/audio/initBattle.wav"));
+const battle_mp3_1 = __importDefault(__webpack_require__(/*! ./assets/audio/battle.mp3 */ "./src/assets/audio/battle.mp3"));
+const tackleHit_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/tackleHit.wav */ "./src/assets/audio/tackleHit.wav"));
+const fireballHit_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/fireballHit.wav */ "./src/assets/audio/fireballHit.wav"));
+const initFireball_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/initFireball.wav */ "./src/assets/audio/initFireball.wav"));
+const victory_wav_1 = __importDefault(__webpack_require__(/*! ./assets/audio/victory.wav */ "./src/assets/audio/victory.wav"));
+exports.AUDIO = {
+    Map: new howler_1.Howl({
+        src: map_wav_1.default,
+        html5: true,
+        volume: 0.1,
+        loop: true
+    }),
+    initBattle: new howler_1.Howl({
+        src: initBattle_wav_1.default,
+        html5: true,
+        volume: 0.05
+    }),
+    battle: new howler_1.Howl({
+        src: battle_mp3_1.default,
+        html5: true,
+        volume: 0.1,
+        loop: true
+    }),
+    tackleHit: new howler_1.Howl({
+        src: tackleHit_wav_1.default,
+        html5: true,
+        volume: 0.1
+    }),
+    fireballHit: new howler_1.Howl({
+        src: fireballHit_wav_1.default,
+        html5: true,
+        volume: 0.1
+    }),
+    initFireball: new howler_1.Howl({
+        src: initFireball_wav_1.default,
+        html5: true,
+        volume: 0.1
+    }),
+    victory: new howler_1.Howl({
+        src: victory_wav_1.default,
+        html5: true,
+        volume: 0.1
+    })
+};
+
+
+/***/ }),
+
 /***/ "./src/logger.ts":
 /*!***********************!*\
   !*** ./src/logger.ts ***!
@@ -1712,6 +1796,76 @@ function rectangularCollision({ rect1, rect2 }) {
 }
 exports.rectangularCollision = rectangularCollision;
 
+
+/***/ }),
+
+/***/ "./src/assets/audio/battle.mp3":
+/*!*************************************!*\
+  !*** ./src/assets/audio/battle.mp3 ***!
+  \*************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/battle.mp3";
+
+/***/ }),
+
+/***/ "./src/assets/audio/fireballHit.wav":
+/*!******************************************!*\
+  !*** ./src/assets/audio/fireballHit.wav ***!
+  \******************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/fireballHit.wav";
+
+/***/ }),
+
+/***/ "./src/assets/audio/initBattle.wav":
+/*!*****************************************!*\
+  !*** ./src/assets/audio/initBattle.wav ***!
+  \*****************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/initBattle.wav";
+
+/***/ }),
+
+/***/ "./src/assets/audio/initFireball.wav":
+/*!*******************************************!*\
+  !*** ./src/assets/audio/initFireball.wav ***!
+  \*******************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/initFireball.wav";
+
+/***/ }),
+
+/***/ "./src/assets/audio/map.wav":
+/*!**********************************!*\
+  !*** ./src/assets/audio/map.wav ***!
+  \**********************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/map.wav";
+
+/***/ }),
+
+/***/ "./src/assets/audio/tackleHit.wav":
+/*!****************************************!*\
+  !*** ./src/assets/audio/tackleHit.wav ***!
+  \****************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/tackleHit.wav";
+
+/***/ }),
+
+/***/ "./src/assets/audio/victory.wav":
+/*!**************************************!*\
+  !*** ./src/assets/audio/victory.wav ***!
+  \**************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = __webpack_require__.p + "./assets/audio/victory.wav";
 
 /***/ })
 
@@ -1827,6 +1981,26 @@ exports.rectangularCollision = rectangularCollision;
 /******/ 			if (!module.children) module.children = [];
 /******/ 			return module;
 /******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/publicPath */
+/******/ 	(() => {
+/******/ 		var scriptUrl;
+/******/ 		if (__webpack_require__.g.importScripts) scriptUrl = __webpack_require__.g.location + "";
+/******/ 		var document = __webpack_require__.g.document;
+/******/ 		if (!scriptUrl && document) {
+/******/ 			if (document.currentScript)
+/******/ 				scriptUrl = document.currentScript.src
+/******/ 			if (!scriptUrl) {
+/******/ 				var scripts = document.getElementsByTagName("script");
+/******/ 				if(scripts.length) scriptUrl = scripts[scripts.length - 1].src
+/******/ 			}
+/******/ 		}
+/******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
+/******/ 		// or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
+/******/ 		if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
+/******/ 		scriptUrl = scriptUrl.replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
+/******/ 		__webpack_require__.p = scriptUrl;
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/jsonp chunk loading */
