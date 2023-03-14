@@ -193,6 +193,7 @@ export class BattleScreen extends Container implements IScreen {
             recipientBox: embyBox,
             container: this
           })
+          this.showDialogue(`${draggle.name} used ${ATTACKS[randomAttackType].name}`)
 
           if (emby.health <= 0) {
             logBattleQueue(`queue.push (${queue.length}) emby fainted`)

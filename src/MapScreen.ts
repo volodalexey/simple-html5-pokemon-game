@@ -35,7 +35,7 @@ export class MapScreen extends Container implements IScreen {
   public foreground!: Sprite
   public moveInterface!: MoveInterface
   public overlappingBattleTrigger = 0.5
-  public overlappingBattleChance = 0.01
+  public overlappingBattleChance = 0.05
   public onBattleStart!: IMapScreenOptions['onBattleStart']
 
   constructor (options: IMapScreenOptions) {
