@@ -24,7 +24,7 @@ export class DialogueBox extends Container {
 
     this.interactive = true
     this.cursor = 'pointer'
-    this.on('pointerdown', () => {
+    this.on('pointertap', () => {
       this.onClick()
     })
   }
