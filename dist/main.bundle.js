@@ -512,7 +512,7 @@ class DialogueBox extends pixi_js_1.Container {
         this.draw(options);
         this.interactive = true;
         this.cursor = 'pointer';
-        this.on('pointerdown', () => {
+        this.on('pointertap', () => {
             this.onClick();
         });
     }
